@@ -6,6 +6,7 @@ import sys
 sys.path.append('~/python/pyGVtools/')
 import m6toolbox
 import netCDF4
+import subprocess
 
 # Define a function to plot a section
 def plot_section(file_handle, record, xq, variable='salt', clim=(33.8,34.55), plot_grid=True, rep='linear', xlim=(400,800), ylim=(-720,0), cmap=plt.cm.jet):
@@ -24,5 +25,11 @@ def plot_section(file_handle, record, xq, variable='salt', clim=(33.8,34.55), pl
     plt.ylim(ylim)
     plt.xlim(xlim)
 
+def plot_diags(path,n1,n2,n3,n4):
+    """
+    Plot some diagnostics computed by the model. These are: total mass, energy,
+     ave. temp/salt, and maxCFL as a function of time.
+    """
+    eval(str("subprocess.call(['./get_output.csh %s'])"% (path+'layer/'+n1)))
 
-
+    subprocess.call(['./get_output.csh' + path])

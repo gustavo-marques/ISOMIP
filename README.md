@@ -13,9 +13,9 @@ The goal of this repository is to centralize the tests, issues/difficulties and 
 
 Quiet runs:
 
-* **[2D without ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/spurious_velocities_quiet_experiments.ipynb)** - added by Gustavo Marques
+* **[2D without ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_2D_noIS.ipynb)** - added by Gustavo Marques
 
-* **[2D with ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/spurious_velocities_quiet_experiments.ipynb)** - added by Gustavo Marques
+* **[2D with ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_2D_yesIS.ipynb)** - added by Gustavo Marques
 
 * **[3D without ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/spurious_velocities_quiet_experiments.ipynb)** - added by Gustavo Marques
 

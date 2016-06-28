@@ -9,15 +9,15 @@ Quiet runs:
 
 * **[2D with ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_2D_yesIS.ipynb)** - added by Gustavo Marques
 
-* **[3D without ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb)** - added by Gustavo Marques
+* **[3D without ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_3D_noIS.ipynb)** - added by Gustavo Marques
 
-* **[3D with ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb)** - added by Gustavo Marques
+* **[3D with ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_3D_yesIS.ipynb)** - added by Gustavo Marques
 
 Sponge layer:
 
-* **[2D, cold interior and warm forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/)** - added by Gustavo Marques
-
 * **[2D, cold interior and cold forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/)** - added by Gustavo Marques
+
+* **[2D, cold interior and warm forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/)** - added by Gustavo Marques
 
 Passive tracers:
 
@@ -25,7 +25,7 @@ Coming soon!
 
 ## ISSUES
 
-* **[Spurious velocities in "quiet experiments"](https://github.com/gustavo-marques/ISOMIP/blob/master/ipyno/spurious_velocities_quiet_experiments.ipynb)** - added by Gustavo Marques
+* **[Spurious velocities in "quiet experiments"](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/spurious_velocities_quiet_experiments.ipynb)** - added by Gustavo Marques
 
 * **[Horizontal pressure gradient errors due to the ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/horizontal_pressure_gradient_errors_due_to_the_ice_shelf.ipynb)**: added by Gustavo Marques
 

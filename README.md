@@ -32,8 +32,10 @@ Coming soon!
 * **[Inconsistency in ALE sponge layer](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/inconsistency_ale_sponge_layer.ipynb)**
 
 ## TO DO LIST
-
-* **[Implementing sponge layer in layer mode](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/sponge_layer_in_layer_mode.ipynb)**
+* **[Parameterization of vertical mixing under the ice shelf](ipynb/vertical_mixing_parameterization.ipynb)**
+ 
+* **[~~Implementing sponge layer in layer mode~~](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/sponge_layer_in_layer_mode.ipynb)**
 
 * **[Impose an evaporative flux in the open ocean region to compensate the melt water](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/evaporative_flux.ipynb)**
 
+* **[Create a script to generate the requested output](ipynb/requested_output.ipynb)**

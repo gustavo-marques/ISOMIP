@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 
 # Define a function to plot a section
-def plot_section(file_handle, record, xq, j=0, variable='salt',eta='e',clim=(33.8,34.55), plot_grid=True, rep='linear', xlim=(400,800), ylim=(-720,0), cmap=plt.cm.jet):
+def plot_section(file_handle, record, xq, j=0, variable='salt',eta='e',clim=(33.8,34.55), plot_grid=True, rep='linear', xlim=(320,800), ylim=(-720,0), cmap=plt.cm.jet):
     """Plots a section of by reading vertical grid and scalar variable and super-sampling
     both in order to plot vertical and horizontal reconstructions.
     

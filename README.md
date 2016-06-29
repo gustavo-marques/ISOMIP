@@ -15,9 +15,9 @@ Quiet runs:
 
 Sponge layer:
 
-* **[2D, cold interior and cold forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/)** 
+* **[2D, cold interior and cold forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/sponge_cold.ipynb)** 
 
-* **[2D, cold interior and warm forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/)** 
+* **[2D, cold interior and warm forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/sponge_warm.ipynb)** 
 
 Passive tracers:
 

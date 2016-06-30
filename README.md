@@ -39,3 +39,8 @@ Coming soon!
 * **[Impose an evaporative flux in the open ocean region to compensate the melt water](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/evaporative_flux.ipynb)**
 
 * **[Create a script to generate the requested output](ipynb/requested_output.ipynb)**
+
+## Notes from discussions
+
+* **[June 29th 2016](ipynb/notes/29june2016.ipynb)**
+

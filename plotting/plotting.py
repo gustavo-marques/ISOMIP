@@ -54,3 +54,8 @@ def plot_stats(file_handle,variable='u',labels=['layer','rho','sigma','z']):
         ax[1].set_xlabel('Time') 
         ax[1].set_ylabel(units) 
         ax[0].set_ylabel(units) 
+
+def get_rho(S,T,rho0=1027.51,Sref=34.2,Tref=-1.0,alpha = 3.733e-5, beta = 7.843e-4):
+    """ Compute linear EoS """
+    rho = rho0 * (1 - alpha * (T-Tref) + beta * (S-Sref))
+    return rho

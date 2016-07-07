@@ -35,7 +35,7 @@ def plot_diags(path,n1,n2,n3,n4):
 
     subprocess.call(['./get_output.csh' + path])
 
-def plot_stats(file_handle,variable='u',labels=['layer','rho','sigma','z']):
+def plot_stats(file_handle,variable='v',labels=['layer','rho','sigma','z']):
     # Two subplots, the axes array is 1-d
     plt.figure(figsize=(18,9))
     plt.title('Max. absolute vel.')

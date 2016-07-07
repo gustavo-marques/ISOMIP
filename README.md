@@ -13,6 +13,8 @@ Quiet runs:
 
 * **[3D with ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_3D_yesIS.ipynb)**  
 
+* **[3D with idealized ice shelf](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/quiet_3D_idealIS.ipynb)**  
+
 Sponge layer:
 
 * **[2D, cold interior and cold forcing](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/sponge_cold.ipynb)** 

@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 
 # Define a function to plot a section
-def plot_section(file_handle, record, xq, i=0, variable='salt',eta='e',clim=(33.8,34.55), plot_grid=True, rep='plm', xlim=(320,800), ylim=(-720,0), cmap=plt.cm.jet):
+def plot_section(file_handle, record, xq, i=0, variable='salt',eta='e',clim=(33.8,34.55), plot_grid=True, rep='pcm', xlim=(320,800), ylim=(-720,0), cmap=plt.cm.jet):
     """Plots a section of by reading vertical grid and scalar variable and super-sampling
     both in order to plot vertical and horizontal reconstructions.
     
@@ -39,9 +39,9 @@ def plot_stats(file_handle,variable='v',labels=['layer','rho','sigma','z']):
     # Two subplots, the axes array is 1-d
     plt.figure(figsize=(18,9))
     plt.title('Max. absolute vel.')
-    time = file_handle[0].variables['Time'][:]
     units = file_handle[0].variables['u'].units
     for i in range(len(labels)):
+        time = file_handle[i].variables['Time'][:]
         smin=np.zeros(len(time)); smax=np.zeros(len(time))
         total=np.zeros(len(time))
         s = file_handle[i].variables[variable][:]      

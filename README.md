@@ -46,3 +46,5 @@ Coming soon!
 
 * **[June 29th 2016](ipynb/notes/29june2016.ipynb)**
 
+* **[August 5th 2016](ipynb/notes/05august2016.ipynb)**
+

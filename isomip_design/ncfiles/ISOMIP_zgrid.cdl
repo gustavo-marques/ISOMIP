@@ -1,0 +1,15 @@
+netcdf ISOMIP_zgrid {
+dimensions:
+	zt = 144 ;
+	zw = 145 ;
+variables:
+	double zt(zt) ;
+		zt:long_name = "Depth of Layer Center" ;
+		zt:units = "m" ;
+		zt:positive = "down" ;
+		zt:edges = "zw" ;
+	double zw(zw) ;
+		zw:units = "m" ;
+		zw:long_name = "Depth of edges" ;
+		zw:positive = "down" ;
+}

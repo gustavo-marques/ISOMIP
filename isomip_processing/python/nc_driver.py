@@ -88,9 +88,9 @@ def create_ncfile(exp_name): # may add exp_type
    print ('*** SUCCESS creating '+exp_name+'.nc!')
    return
 
-def populate_ncfile(exp_name, data): # may add exp_type
+def write_ncfile(exp_name, data): # may add exp_type
    """
-   This function populates a netcdf file with the fields required for the isomip+ experiments. Different fields are added based on the type experiment that is being analyzed (Ocean0, Ocean1 etc).
+   This function writes the fields required for the isomip+ experiments into a pre-exiting netcdf file (exp_name). Different fields (given by the structure data) are added based on the type experiment that is being analyzed (Ocean0, Ocean1 etc).
    """
-
+   print ('*** SUCCESS writing data into '+exp_name+'.nc!')
    return

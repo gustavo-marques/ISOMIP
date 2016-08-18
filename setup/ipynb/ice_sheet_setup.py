@@ -3,6 +3,76 @@ import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 import matplotlib.pyplot as plt
 
+#topography
+# define parameters (in m)
+Bmax=720.0 # max depth of bedrock topography
+B0=-150.0  # bedrock topography at x =0
+B2=-728.8  # Second bedrock topography coeff
+B4=343.91  # Third bedrock topography coeff
+B6=-50.57  # Forth bedrock topography coeff
+x_bar=300.0e3 # Characteristic along-flow lenght scale of the bedrock
+dc=500.0  # depth of the trough compared with side walls
+fc=4.0e3  # Characteristic width of the side walls of the channel
+wc=24.0e3 # half-width of the trough
+Ly=80.0e3 # domain width (across ice flow)
+
+# domain
+dx=2.0e3 # resolution
+x=np.arange(320.0e3,800.0e3+dx,dx)
+y=np.arange(0.0,80.0e3+dx,dx)
+
+# eq. 3
+x_til=x/x_bar
+# eq. 2
+Bx=B0+B2*x_til**2 + B4*x_til**4 + B6*x_til**6
+# eq 4
+By=(dc/(1+np.exp(-2*(y- Ly/2. - wc)/fc))) + (dc/(1+np.exp(2*(y- Ly/2. + wc)/fc)))
+# eq 1
+B=np.zeros((len(y),len(x)))
+for i in range(len(x)):
+    for j in range(len(y)):
+        B[j,i]=np.max([Bx[i]+By[j],-Bmax])
+
+[X,Y]=np.meshgrid(x,y)
+plt.figure()
+plt.contourf(X/1.0e3,Y/1.0e3,B)
+plt.colorbar()
+plt.xlabel('x (km)')
+plt.ylabel('y (km)')
+plt.show()
+
+# Initial T/S
+def get_rho(S,T):
+    rho0=1027.51; Sref=34.2; Tref=-1.0
+    alpha = 3.733e-5; beta = 7.843e-4
+    rho = rho0 * (1 - alpha * (T-Tref) + beta * (S-Sref))
+    return rho
+
+# initial T and S eqs(18 and 19)
+z = np.linspace(B.min(),0,500)
+# COLD
+T0=-1.9; Tb=-1.9
+S0=33.8; Sb=34.55
+temp_cold = -1.9
+salt_cold = S0 + (Sb - S0)* -z/Bmax
+rho_cold = get_rho(salt_cold,temp_cold)
+
+# WARM
+T0=-1.9; Tb=1.0
+S0=33.8; Sb=34.7
+temp_warm = T0 + (Tb - T0)* -z/Bmax
+salt_warm = S0 + (Sb - S0)* -z/Bmax
+rho_warm = get_rho(salt_warm,temp_warm)
+
+plt.figure()
+plt.plot(rho_cold-1000,z,'r',rho_warm-1000,z,'b')
+plt.title('Cold (r), Warm (b)')
+plt.xlabel('Density (kg/m^3)')
+plt.ylabel('Depth (m)')
+plt.grid()
+plt.show()
+
+# ice shelf
 # read provided netcdf
 ncpath='../ncfiles/Ocean1_input_geom_v1.01.nc'
 x = netCDF4.Dataset(ncpath).variables['x'][:]
@@ -13,7 +83,7 @@ lowerSurface = netCDF4.Dataset(ncpath).variables['lowerSurface'][:]
 
 # read 3D file
 file3D = netCDF4.Dataset('../ncfiles/Ocean1_3D.nc','r+')
-# read 3D file
+# read 2D file
 file2D = netCDF4.Dataset('../ncfiles/Ocean1_2D.nc','r+')
 
 thick = upperSurface - lowerSurface

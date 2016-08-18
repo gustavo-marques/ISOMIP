@@ -18,8 +18,8 @@ Ly=80.0e3 # domain width (across ice flow)
 
 # domain
 dx=2.0e3 # resolution
-x=np.arange(320.0e3,800.0e3+dx,dx)
-y=np.arange(0.0,80.0e3+dx,dx)
+x=np.arange(320.0e3 + dx*0.5,800.0e3,dx)
+y=np.arange(0.0+dx*0.5,80.0e3,dx)
 
 # eq. 3
 x_til=x/x_bar
@@ -49,19 +49,19 @@ def get_rho(S,T):
     return rho
 
 # initial T and S eqs(18 and 19)
-z = np.linspace(B.min(),0,500)
+z = np.linspace(0,-B.min(),1000)
 # COLD
 T0=-1.9; Tb=-1.9
 S0=33.8; Sb=34.55
 temp_cold = -1.9
-salt_cold = S0 + (Sb - S0)* -z/Bmax
+salt_cold = S0 + (Sb - S0)* z/Bmax
 rho_cold = get_rho(salt_cold,temp_cold)
 
 # WARM
 T0=-1.9; Tb=1.0
 S0=33.8; Sb=34.7
-temp_warm = T0 + (Tb - T0)* -z/Bmax
-salt_warm = S0 + (Sb - S0)* -z/Bmax
+temp_warm = T0 + (Tb - T0)* z/Bmax
+salt_warm = S0 + (Sb - S0)* z/Bmax
 rho_warm = get_rho(salt_warm,temp_warm)
 
 plt.figure()
@@ -87,11 +87,6 @@ file3D = netCDF4.Dataset('../ncfiles/Ocean1_3D.nc','r+')
 file2D = netCDF4.Dataset('../ncfiles/Ocean1_2D.nc','r+')
 
 thick = upperSurface - lowerSurface
-
-lowerSurface[thick<100.]=0.0
-upperSurface[thick<100.]=0.0
-thick = upperSurface - lowerSurface
-
 # original data
 plt.figure(figsize=(12,6))
 plt.contourf(X,Y,upperSurface,50)
@@ -117,7 +112,7 @@ front=np.nonzero(lowerSurface[0,:]==0)[0][0]
 lowerSurface_smoth = np.zeros(lowerSurface.shape)
 upperSurface_smoth = np.zeros(upperSurface.shape)
 
-sigma = [4,4] #  the standard deviation of the distribution
+sigma = [2,2] #  the standard deviation of the distribution
 #lowerSurface_smoth[:,0:front] = gaussian_filter(lowerSurface[:,0:front],sigma)
 lowerSurface_smoth = gaussian_filter(lowerSurface,sigma)
 #upperSurface_smoth[:,0:front] = gaussian_filter(upperSurface[:,0:front],sigma)
@@ -149,7 +144,6 @@ plt.ylabel('y [km]')
 #    lowerSurface_smoth[j,front+1]=-50;lowerSurface_smoth[j,front+2]=-25.;lowerSurface_smoth[j,front+3]=-12.5
     #lowerSurface_smoth[j,front10::] = gaussian_filter(lowerSurface_smoth[j,front10::],sigma)
     #upperSurface_smoth[j,front::] = gaussian_filter(upperSurface_smoth[j,front::],sigma)
-
     
 #thick_smoth = upperSurface_smoth - lowerSurface_smoth
 #lowerSurface_smoth[thick<100.]=0.0
@@ -209,20 +203,60 @@ x1=x[::2];y1=y[::2]
 thick1=thick_smoth[::2,::2]
 height=lowerSurface_smoth[::2,::2]
 top=upperSurface_smoth[::2,::2]
-height[thick1<100.]=0.0
-top[thick1<100.]=0.0
+#height[thick1<100.]=0.0
+#top[thick1<100.]=0.0
 thick1 = top - height
 
-sigma = [2,2] #  the standard deviation of the distribution
-thick1 = gaussian_filter(thick1,sigma)
-height = gaussian_filter(height,sigma)
-
-height[thick1<15.]=0.0
-top[thick1<15.]=0.0
-thick1 = top - height
-
+# compute area
 area = np.ones((thick1.shape))* (x1[1]-x1[0]) * (y1[1]-y1[0])
 area[thick1==0.0]=0.0
+
+# compute mass (kg/m^2)
+rho_ice = 918.
+mass = thick1 * rho_ice
+# pressure (kg/(m s^2))
+g=9.806
+p_ice = mass * g
+p_ocean = rho_warm * g * z
+#def get_ice_draft(thickness,scale_factor,rho_ice)
+#    psurf = scale_factor * thickness
+
+# calculate ice_draft and ocean_thickness
+min_thickness = 10.
+im,jm = area.shape
+ice_draft = np.zeros((im,jm))
+ice_draft = np.ma.masked_where(area == 0, ice_draft)
+ocean_thickness = np.zeros((im,jm))
+ocean_thickness = np.ma.masked_where(area == 0, ocean_thickness)
+for i in range(im):
+    for j in range(jm):
+	    if area[i,j] == 0:
+	       ocean_thickness.mask[i,j] = True
+	       ice_draft.mask[i,j] = True
+            else:
+	       if (p_ice[i,j] > p_ocean.max()):
+		    ocean_thickness.mask[i,j] = True ; ice_draft[i,j]=B[i,j]
+	       else:
+		    # find height where ice shelf will float (if not grounded)
+		    ice_draft[i,j]=-np.interp(p_ice[i,j], p_ocean, z)
+		    if ice_draft[i,j]<=B[i,j]:
+		       ice_draft[i,j]=B[i,j]; ocean_thickness.mask[i,j] = True
+		    else:
+		       ocean_thickness[i,j] = ice_draft[i,j]-B[i,j]
+
+                    if (ocean_thickness[i,j] <= min_thickness):
+			    if (ocean_thickness[i,j] <= min_thickness*0.5):
+                               # force to be grounded
+			       thick1[i,j]=thick1[i,j] + min_thickness*0.5 
+			       ice_draft[i,j]=B[i,j]; ocean_thickness.mask[i,j] = True
+                            else:
+			       # force space between ice shelf and ocean of at 
+			       # least min_thickness	  
+			       thick1[i,j]=thick1[i,j] - min_thickness*0.5
+                               mass[i,j] = thick1[i,j] * rho_ice  
+                               p_ice[i,j] = mass[i,j] * g
+			       ice_draft[i,j]=-np.interp(p_ice[i,j], p_ocean, z)
+			       ocean_thickness[i,j] = ice_draft[i,j]-B[i,j]
 
 #save into netcdf file
 # 3D

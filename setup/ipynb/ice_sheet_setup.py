@@ -112,7 +112,7 @@ front=np.nonzero(lowerSurface[0,:]==0)[0][0]
 lowerSurface_smoth = np.zeros(lowerSurface.shape)
 upperSurface_smoth = np.zeros(upperSurface.shape)
 
-sigma = [2,2] #  the standard deviation of the distribution
+sigma = [6,6] #  the standard deviation of the distribution
 #lowerSurface_smoth[:,0:front] = gaussian_filter(lowerSurface[:,0:front],sigma)
 lowerSurface_smoth = gaussian_filter(lowerSurface,sigma)
 #upperSurface_smoth[:,0:front] = gaussian_filter(upperSurface[:,0:front],sigma)
@@ -222,7 +222,7 @@ p_ocean = rho_warm * g * z
 #    psurf = scale_factor * thickness
 
 # calculate ice_draft and ocean_thickness
-min_thickness = 10.
+min_thickness = 40.
 im,jm = area.shape
 ice_draft = np.zeros((im,jm))
 ice_draft = np.ma.masked_where(area == 0, ice_draft)
@@ -245,18 +245,21 @@ for i in range(im):
 		       ocean_thickness[i,j] = ice_draft[i,j]-B[i,j]
 
                     if (ocean_thickness[i,j] <= min_thickness):
-			    if (ocean_thickness[i,j] <= min_thickness*0.5):
-                               # force to be grounded
-			       thick1[i,j]=thick1[i,j] + min_thickness*0.5 
-			       ice_draft[i,j]=B[i,j]; ocean_thickness.mask[i,j] = True
-                            else:
-			       # force space between ice shelf and ocean of at 
-			       # least min_thickness	  
-			       thick1[i,j]=thick1[i,j] - min_thickness*0.5
-                               mass[i,j] = thick1[i,j] * rho_ice  
-                               p_ice[i,j] = mass[i,j] * g
-			       ice_draft[i,j]=-np.interp(p_ice[i,j], p_ocean, z)
-			       ocean_thickness[i,j] = ice_draft[i,j]-B[i,j]
+                            # always force to be grounded
+                            thick1[i,j]=thick1[i,j] + 2*min_thickness
+                            ocean_thickness[i,j] = min_thickness
+			    #if (ocean_thickness[i,j] <= min_thickness*0.5):
+                            #   # force to be grounded
+			    #   thick1[i,j]=thick1[i,j] + min_thickness*0.5 
+			    #   ice_draft[i,j]=B[i,j]; ocean_thickness.mask[i,j] = True
+                            #else:
+			    #   # force space between ice shelf and ocean of at 
+			    #   # least min_thickness	  
+			    #   thick1[i,j]=thick1[i,j] - min_thickness*0.5
+                            #   mass[i,j] = thick1[i,j] * rho_ice  
+                            #   p_ice[i,j] = mass[i,j] * g
+			    #   ice_draft[i,j]=-np.interp(p_ice[i,j], p_ocean, z)
+			    #   ocean_thickness[i,j] = ice_draft[i,j]-B[i,j]
 
 #save into netcdf file
 # 3D

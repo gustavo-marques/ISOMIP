@@ -222,7 +222,7 @@ p_ocean = rho_warm * g * z
 #    psurf = scale_factor * thickness
 
 # calculate ice_draft and ocean_thickness
-min_thickness = 40.
+min_thickness = 10.
 im,jm = area.shape
 ice_draft = np.zeros((im,jm))
 ice_draft = np.ma.masked_where(area == 0, ice_draft)
@@ -246,7 +246,7 @@ for i in range(im):
 
                     if (ocean_thickness[i,j] <= min_thickness):
                             # always force to be grounded
-                            thick1[i,j]=thick1[i,j] + 2*min_thickness
+                            thick1[i,j]=thick1[i,j] + 1.5*min_thickness
                             ocean_thickness[i,j] = min_thickness
 			    #if (ocean_thickness[i,j] <= min_thickness*0.5):
                             #   # force to be grounded

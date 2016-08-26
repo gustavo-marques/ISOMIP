@@ -87,6 +87,10 @@ file3D = netCDF4.Dataset('../ncfiles/Ocean1_3D.nc','r+')
 file2D = netCDF4.Dataset('../ncfiles/Ocean1_2D.nc','r+')
 
 thick = upperSurface - lowerSurface
+# calve when thick<100
+#upperSurface[thick<100]=0.0
+#lowerSurface[thick<100]=0.0
+#thick = upperSurface - lowerSurface
 # original data
 plt.figure(figsize=(12,6))
 plt.contourf(X,Y,upperSurface,50)
@@ -112,12 +116,17 @@ front=np.nonzero(lowerSurface[0,:]==0)[0][0]
 lowerSurface_smoth = np.zeros(lowerSurface.shape)
 upperSurface_smoth = np.zeros(upperSurface.shape)
 
-sigma = [6,6] #  the standard deviation of the distribution
+sigma = [2,2] #  the standard deviation of the distribution
 #lowerSurface_smoth[:,0:front] = gaussian_filter(lowerSurface[:,0:front],sigma)
 lowerSurface_smoth = gaussian_filter(lowerSurface,sigma)
 #upperSurface_smoth[:,0:front] = gaussian_filter(upperSurface[:,0:front],sigma)
 upperSurface_smoth = gaussian_filter(upperSurface,sigma)
 
+thick_smoth = upperSurface_smoth - lowerSurface_smoth
+
+# apply calving
+upperSurface_smoth[thick_smoth<100]=0.0
+lowerSurface_smoth[thick_smoth<100]=0.0
 thick_smoth = upperSurface_smoth - lowerSurface_smoth
 
 # plot after first smoothing
@@ -222,7 +231,7 @@ p_ocean = rho_warm * g * z
 #    psurf = scale_factor * thickness
 
 # calculate ice_draft and ocean_thickness
-min_thickness = 10.
+min_thickness = 20.
 im,jm = area.shape
 ice_draft = np.zeros((im,jm))
 ice_draft = np.ma.masked_where(area == 0, ice_draft)

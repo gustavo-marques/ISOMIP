@@ -9,7 +9,4 @@ variables:
 	double area(ny, nx) ;
 		area:units = "m2" ;
 		area:standard_name = "ice shelf area" ;
-	double height(ny, nx) ;
-		height:units = "m" ;
-		height:standard_name = "location of ssh (negative if under ice shelf)" ;
 }

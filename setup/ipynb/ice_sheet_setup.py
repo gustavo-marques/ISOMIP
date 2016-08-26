@@ -2,6 +2,7 @@ import netCDF4
 import numpy as np
 from scipy.ndimage.filters import gaussian_filter
 import matplotlib.pyplot as plt
+from scipy import interpolate
 
 #topography
 # define parameters (in m)
@@ -116,7 +117,7 @@ front=np.nonzero(lowerSurface[0,:]==0)[0][0]
 lowerSurface_smoth = np.zeros(lowerSurface.shape)
 upperSurface_smoth = np.zeros(upperSurface.shape)
 
-sigma = [2,2] #  the standard deviation of the distribution
+sigma = [1,5] # (x,y) the standard deviation of the distribution
 #lowerSurface_smoth[:,0:front] = gaussian_filter(lowerSurface[:,0:front],sigma)
 lowerSurface_smoth = gaussian_filter(lowerSurface,sigma)
 #upperSurface_smoth[:,0:front] = gaussian_filter(upperSurface[:,0:front],sigma)
@@ -125,9 +126,9 @@ upperSurface_smoth = gaussian_filter(upperSurface,sigma)
 thick_smoth = upperSurface_smoth - lowerSurface_smoth
 
 # apply calving
-upperSurface_smoth[thick_smoth<100]=0.0
-lowerSurface_smoth[thick_smoth<100]=0.0
-thick_smoth = upperSurface_smoth - lowerSurface_smoth
+#upperSurface_smoth[thick_smoth<100]=0.0
+#lowerSurface_smoth[thick_smoth<100]=0.0
+#thick_smoth = upperSurface_smoth - lowerSurface_smoth
 
 # plot after first smoothing
 plt.figure(figsize=(12,6))
@@ -207,22 +208,26 @@ plt.ylabel('z [m]')
 plt.title('Lower surface at y = 500 km')
 plt.show()
 
-# put into coarse grid
-x1=x[::2];y1=y[::2]
-thick1=thick_smoth[::2,::2]
-height=lowerSurface_smoth[::2,::2]
-top=upperSurface_smoth[::2,::2]
-#height[thick1<100.]=0.0
-#top[thick1<100.]=0.0
-thick1 = top - height
+# interpolate to coarse grid
+xnew=x[::2];ynew=y[::2]
+f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
+#f_top = interpolate.interp2d(x, y, upperSurface_smoth, kind='cubic')
+#f_bot = interpolate.interp2d(x, y, lowerSurface_smoth, kind='cubic')
+
+thick_new=f_thick(xnew, ynew)
+#height=f_bot(xnew, ynew)
+#top=f_top(xnew, ynew)
+#height[thick_new<100.=0.0
+#top[thick_new<100.]=0.0
+thick_new[thick_new<10.] = 0.0
 
 # compute area
-area = np.ones((thick1.shape))* (x1[1]-x1[0]) * (y1[1]-y1[0])
-area[thick1==0.0]=0.0
+area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])
+area[thick_new==0]=0.0
 
 # compute mass (kg/m^2)
 rho_ice = 918.
-mass = thick1 * rho_ice
+mass = thick_new * rho_ice
 # pressure (kg/(m s^2))
 g=9.806
 p_ice = mass * g
@@ -231,7 +236,7 @@ p_ocean = rho_warm * g * z
 #    psurf = scale_factor * thickness
 
 # calculate ice_draft and ocean_thickness
-min_thickness = 20.
+min_thickness = 40.
 im,jm = area.shape
 ice_draft = np.zeros((im,jm))
 ice_draft = np.ma.masked_where(area == 0, ice_draft)
@@ -255,17 +260,17 @@ for i in range(im):
 
                     if (ocean_thickness[i,j] <= min_thickness):
                             # always force to be grounded
-                            thick1[i,j]=thick1[i,j] + 1.5*min_thickness
+                            thick_new[i,j]=thick_new[i,j] + 1.5*min_thickness
                             ocean_thickness[i,j] = min_thickness
 			    #if (ocean_thickness[i,j] <= min_thickness*0.5):
                             #   # force to be grounded
-			    #   thick1[i,j]=thick1[i,j] + min_thickness*0.5 
+			    #   thick_new[i,j]=thick_new[i,j] + min_thickness*0.5 
 			    #   ice_draft[i,j]=B[i,j]; ocean_thickness.mask[i,j] = True
                             #else:
 			    #   # force space between ice shelf and ocean of at 
 			    #   # least min_thickness	  
-			    #   thick1[i,j]=thick1[i,j] - min_thickness*0.5
-                            #   mass[i,j] = thick1[i,j] * rho_ice  
+			    #   thick_new[i,j]=thick_new[i,j] - min_thickness*0.5
+                            #   mass[i,j] = thick_new[i,j] * rho_ice  
                             #   p_ice[i,j] = mass[i,j] * g
 			    #   ice_draft[i,j]=-np.interp(p_ice[i,j], p_ocean, z)
 			    #   ocean_thickness[i,j] = ice_draft[i,j]-B[i,j]
@@ -273,14 +278,12 @@ for i in range(im):
 #save into netcdf file
 # 3D
 file3D.variables['area'][:,:] = area[:,:].T
-file3D.variables['thick'][:,:] = thick1[:,:].T
-file3D.variables['height'][:,:] = height[:,:].T
+file3D.variables['thick'][:,:] = thick_new[:,:].T
 
 # 2D (middle of the domain)
 for i in range(file2D.variables['area'].shape[1]):
     file2D.variables['area'][:,i] = area[20,:]
-    file2D.variables['thick'][:,i] = thick1[20,:]
-    file2D.variables['height'][:,i] = height[20,:] 
+    file2D.variables['thick'][:,i] = thick_new[20,:]
 
 file2D.close()
 file3D.close()

@@ -32,7 +32,7 @@ def parseCommandLine():
       ''',
   epilog='Written by Gustavo Marques, Aug. 2016.')
 
-  parser.add_argument('-t','-type', type=str, default='ocean0',
+  parser.add_argument('-type', type=str, default='ocean0',
       help='''The type pf experiment that will computed (ocean0, ocean1 etc). Default is ocean0.''')
 
   parser.add_argument('-n','-name', type=str, default='Ocean0_COM_MOM6-LAYER',
@@ -60,7 +60,7 @@ def driver(args):
    # base of STATIC ice shelf, which is ssh(t=0); make it positive
    ice_base = -Dataset('ISOMIP_IC.nc').variables['ave_ssh'][0,:,:]
    ice_base[ice_base<1e-5] = 0.0
-   #exclude grounded ice and open ocean
+   #mask grounded ice and open ocean
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base) 
    shelf_area = mask_ocean(shelf_area,shelf_area)
    
@@ -80,18 +80,18 @@ def driver(args):
       melt4gamma(name,shelf_area,ice_base,depth)
    
    # create ncfile and zero fields. Each function below will corresponding values
-   create_ncfile(name)
+   create_ncfile(name,args.type)
 
    # load additional variables
    ocean_area = Dataset('ocean_geometry.nc').variables['Ah'][:] 
-   ocean_area = mask_grounded_ice(ocean_area,depth,ice_base)
    h = Dataset('ocean_month.nc').variables['h'][:]
    h[h<1.0e-5] = 0.0
    melt = Dataset('ocean_month.nc').variables['melt'][:]
-   # under shelf melt is always > 0. Therefore we can mask melt=0.
-   melt = np.ma.masked_where(melt==0,melt)
    mass_flux = Dataset('ocean_month.nc').variables['mass_flux'][:]
-
+   # mask open ocean and grounded ice
+   ocean_area = mask_grounded_ice(ocean_area,depth,ice_base)
+   melt = mask_grounded_ice(melt,depth,ice_base)
+   melt = mask_ocean(melt,shelf_area)
    # tracers
    salt = Dataset('ocean_month.nc').variables['salt'][:]   
    temp = Dataset('ocean_month.nc').variables['temp'][:]
@@ -105,9 +105,90 @@ def driver(args):
    
    # compute total melt flux
    total_melt_flux(mass_flux)
+
+   # mean temp
+   mean_tracer(ocean_area,h,temp,'meanTemperature','C')
+   
+   # mean salt
+   mean_tracer(ocean_area,h,salt,'meanSalinity','PSU')
+
+   # horizontal fields
+   #if (args.type == 'ocean3' or args.type == 'ocean4'):
+   # iceDraft
+   # will have to works this out when we run these cases
+   iceDraft = mask_grounded_ice(ice_base,depth,ice_base)
+   saveXY(iceDraft,'iceDraft')
+   
+   # bathymetry (negative)
+   depth = -mask_grounded_ice(depth,depth,ice_base)
+   depth.fill_value=0.0
+   saveXY(depth,'bathymetry')
+
+   # meltRate, already masked above
+   melt = melt/(3600.*24*365) # in m/s
+   saveXY(melt,'meltRate')
+   
+   # frictionVelocity
+   ustar_shelf = Dataset('ocean_month.nc').variables['ustar_shelf'][:]
+   # mask open ocean and grounded ice
+   ustar_shelf = mask_grounded_ice(ustar_shelf,depth,ice_base)
+   ustar_shelf = mask_ocean(ustar_shelf,shelf_area)
+   saveXY(ustar_shelf,'frictionVelocity')
+
+   # thermalDriving
+   thermal_driving = Dataset('ocean_month.nc').variables['thermal_driving'][:]
+   thermal_driving = mask_grounded_ice(thermal_driving,depth,ice_base)
+   thermal_driving = mask_ocean(thermal_driving,shelf_area)
+   saveXY(thermal_driving,'thermalDriving')
+
+   # halineDriving
+   haline_driving = Dataset('ocean_month.nc').variables['haline_driving'][:]
+   haline_driving = mask_grounded_ice(haline_driving,depth,ice_base)
+   haline_driving = mask_ocean(haline_driving,shelf_area)
+   saveXY(haline_driving,'halineDriving')
+
+   # uBoundaryLayer
+   u_ml = Dataset('ocean_month.nc').variables['u_ml'][:]
+   u_ml = mask_grounded_ice(u_ml,depth,ice_base)
+   u_ml = mask_ocean(u_ml,shelf_area)
+   saveXY(u_ml,'uBoundaryLayer')
+
+   # vBoundaryLayer
+   v_ml = Dataset('ocean_month.nc').variables['v_ml'][:]
+   v_ml = mask_grounded_ice(v_ml,depth,ice_base)
+   v_ml = mask_ocean(v_ml,shelf_area)
+   saveXY(v_ml,'vBoundaryLayer')
+
+   # write time properly
+
    print('Done!')
    return
 
+def saveXY(var,varname):
+   '''
+   Save 2D (x,y) or 3D array (time,x,y) into the netCDF file.
+   '''
+   if len(var.shape) == 2:
+      ncwrite(name,varname,var.T) # needs to tanspose it
+   else:
+     var = var.transpose(0, 2, 1)
+     ncwrite(name,varname,var)
+
+   return
+
+def mean_tracer(area,h,var,varname,units):
+   '''
+   Compute tracer (temp,salt or any other tracer) averaged over the ocean volume.
+   '''
+   area = np.resize(area,h.shape)
+   tracer = np.zeros(h.shape[0])
+   for t in range(len(tracer)):
+       vol = (area[t,:] * h[t,:])
+       tracer[t] = (var[t,:] * vol).sum() /vol.sum()
+       print(varname+' ('+units+') at t='+str(t)+' is:'+str(tracer[t]))
+
+   ncwrite(name,varname,tracer)
+   return
 
 def total_melt_flux(mass):
     '''
@@ -187,27 +268,27 @@ def melt4gamma(name,area,ice_base,depth):
    return
 
 
-def mask_ocean(data,area,D=False):
+def mask_ocean(data,area):
    """
-   Mask open ocean. Works with 2D or 3D arrays (default 2D,   set D=true for 3D).
+   Mask open ocean. Works with 2D or 3D arrays.
    """
-   if not D:
+   if len(data.shape) == 2: # 2D array
      data = np.ma.masked_where(area==0,data)   
 
-   else:
+   else: # 3D array
      NZ,NY,NX = data.shape
      area=np.resize(area,(NZ,NY,NX))
      data = np.ma.masked_where(area==0,data)
    
    return  data
 
-def mask_grounded_ice(data,depth,base,D=False):
+def mask_grounded_ice(data,depth,base):
    """
-   Mask regions where the ice shelf is grounded (base>=depth). Works with 2D or 3D arrays (default 2D,   set D=true for 3D).
+   Mask regions where the ice shelf is grounded (base>=depth). Works with 2D or 3D arrays.
    """
-   if not D:
+   if len(data.shape) == 2: # 2D array
       data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here      
-   else:
+   else: # 3D array
       NZ,NY,NX = data.shape
       base = np.resize(base,(NZ,NY,NX))
       depth = np.resize(depth,(NZ,NY,NX))
@@ -215,9 +296,9 @@ def mask_grounded_ice(data,depth,base,D=False):
 
    return data
 
-def create_ncfile(exp_name): # may add exp_type
+def create_ncfile(exp_name, type): # may add exp_type
    """
-   This function creates a netcdf file with the fields required for the isomip+ experiments. Different fields are generated based on the type experiment that is being analyzed (Ocean0, Ocean1 etc).
+   Creates a netcdf file with the fields required for the isomip+ experiments. Different fields are generated based on the type of experiment that is being analyzed (Ocean0, Ocean1 etc).
    """
 
    # open a new netCDF file for writing.
@@ -249,9 +330,13 @@ def create_ncfile(exp_name): # may add exp_type
    meanTemperature.units = 'deg C'; meanTemperature.description = 'the potential temperature averaged over the ocean volume'
    meanSalinity = ncfile.createVariable('meanSalinity',np.dtype('float32').char,('nTime',))
    meanSalinity.units = 'PSU'; meanSalinity.description = 'the salinity averaged over the ocean volume'
-   iceDraft = ncfile.createVariable('iceDraft',np.dtype('float32').char,('ny','nx'))   
+   if (type == 'ocean3' or type == 'ocean4'):
+     iceDraft = ncfile.createVariable('iceDraft',np.dtype('float32').char,('nTime','ny','nx'))  
+     bathymetry = ncfile.createVariable('bathymetry',np.dtype('float32').char,('nTime','ny','nx'))
+   else:
+     iceDraft = ncfile.createVariable('iceDraft',np.dtype('float32').char,('ny','nx')) 
+     bathymetry = ncfile.createVariable('bathymetry',np.dtype('float32').char,('ny','nx'))  
    iceDraft.units = 'm'; iceDraft.description = 'elevation of the ice-ocean interface'
-   bathymetry = ncfile.createVariable('bathymetry',np.dtype('float32').char,('ny','nx'))     
    bathymetry.units = 'm'; bathymetry.description = 'elevation of the bathymetry'
    meltRate = ncfile.createVariable('meltRate',np.dtype('float32').char,('nTime','ny','nx'))
    meltRate.units = 'm/s'; meltRate.description = 'melt rate, positive for melting'

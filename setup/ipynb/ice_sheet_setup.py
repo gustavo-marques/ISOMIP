@@ -300,11 +300,12 @@ p_ice = mass * g
 
 
 #smooth one mor etime
-sigma = [0,5] # (x,y) the standard deviation of the distribution
+sigma = [2,2] # (x,y) the standard deviation of the distribution
 thick_new = gaussian_filter(thick_new,sigma)
 
 # remove ice < min_thickness
-thick_new[thick_new<min_thickness/4.] = 0.0
+#thick_new[thick_new<min_thickness/4.] = 0.0
+thick_new[thick_new<100.] = 0.0
 
 # update area
 area[thick_new==0]=0.0

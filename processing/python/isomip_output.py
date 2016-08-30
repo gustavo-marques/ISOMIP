@@ -35,8 +35,8 @@ def parseCommandLine():
   parser.add_argument('-type', type=str, default='ocean0',
       help='''The type pf experiment that will computed (ocean0, ocean1 etc). Default is ocean0.''')
 
-  parser.add_argument('-n','-name', type=str, default='Ocean0_COM_MOM6-LAYER',
-      help='''The name of the experiment following the ISOMIP+ definition (expt_COM_model). Default is Ocean0_COM_MOM6-LAYER.''')
+  parser.add_argument('-n', type=str, default='Ocean0_COM_MOM6-LAYER',
+      help='''The name of the experiment following the ISOMIP+ definition (expt_COM_model). This name is used to save the netCDF file. Default is Ocean0_COM_MOM6-LAYER.''')
 
   parser.add_argument('--mean4gamma', help='''Compute (and save in a text file) melting over the area where ice base > 300 m and over final six months.''', action="store_true")
  
@@ -79,8 +79,10 @@ def driver(args):
       print("Computing mean melt rate to calibrate gamma...")
       melt4gamma(name,shelf_area,ice_base,depth)
    
+   # read time variable from montly mean
+   time = Dataset('ocean_month.nc').variables['time'][:]
    # create ncfile and zero fields. Each function below will corresponding values
-   create_ncfile(name,args.type)
+   create_ncfile(name,time,args.type)
 
    # load additional variables
    ocean_area = Dataset('ocean_geometry.nc').variables['Ah'][:] 
@@ -296,7 +298,7 @@ def mask_grounded_ice(data,depth,base):
 
    return data
 
-def create_ncfile(exp_name, type): # may add exp_type
+def create_ncfile(exp_name, time, type): # may add exp_type
    """
    Creates a netcdf file with the fields required for the isomip+ experiments. Different fields are generated based on the type of experiment that is being analyzed (Ocean0, Ocean1 etc).
    """
@@ -306,7 +308,8 @@ def create_ncfile(exp_name, type): # may add exp_type
    # dimensions
    nx = 240 ; ny = 40 ; nz = 144 
    # create dimensions.
-   ncfile.createDimension('nTime', None)
+   #ncfile.createDimension('nTime', None)
+   ncfile.createDimension('nTime', len(time))
    ncfile.createDimension('nx',nx)
    ncfile.createDimension('ny',ny)
    ncfile.createDimension('nz',nz)
@@ -372,7 +375,9 @@ def create_ncfile(exp_name, type): # may add exp_type
    y[:] = np.arange(1,80,2)*1.0e3
    z[:] = -np.arange(2.5,720,5) 
    # time since start of simulation
-   time[:] = np.array([0, 2678400, 5097600, 7776000, 1.0368e+07, 1.30464e+07, 1.56384e+07,                      1.83168e+07, 2.09952e+07, 2.35872e+07, 2.62656e+07, 2.88576e+07])
+   time[0] = 0.
+   time[1::] = ocean_time[0:-1]
+   #time[:] = np.array([0, 2678400, 5097600, 7776000, 1.0368e+07, 1.30464e+07, 1.56384e+07,1.83168e+07, 2.09952e+07, 2.35872e+07, 2.62656e+07, 2.88576e+07])
 
    # assign zero to variables 
    #meanMeltRate[:] = np.zeros(len(time))

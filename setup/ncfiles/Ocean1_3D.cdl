@@ -1,7 +1,7 @@
 netcdf isomip_ice_shelf1 {
 dimensions:
-	ny = 240 ;
-	nx = 40 ;
+	ny = 40 ;
+	nx = 240 ;
 variables:
 	double thick(ny, nx) ;
 		thick:units = "m" ;

@@ -118,7 +118,7 @@ front=np.nonzero(lowerSurface[0,:]==0)[0][0]
 lowerSurface_smoth = np.zeros(lowerSurface.shape)
 upperSurface_smoth = np.zeros(upperSurface.shape)
 
-sigma = [1,5] # (x,y) the standard deviation of the distribution
+sigma = [1,5] # (y,x) the standard deviation of the distribution
 #lowerSurface_smoth[:,0:front] = gaussian_filter(lowerSurface[:,0:front],sigma)
 lowerSurface_smoth = gaussian_filter(lowerSurface,sigma)
 #upperSurface_smoth[:,0:front] = gaussian_filter(upperSurface[:,0:front],sigma)
@@ -186,27 +186,27 @@ plt.plot(lowerSurface_smoth[40,:],'b');plt.plot(lowerSurface[40,:],'r')
 plt.xlim(300,350)
 plt.xlabel('x [km]')
 plt.ylabel('z [m]')
-plt.title('Lower surface at x = 40 km')
+plt.title('Lower surface at y = 40 km')
 
 plt.figure(figsize=(12,6))
 plt.plot(lowerSurface_smoth[5,:],'b');plt.plot(lowerSurface[5,:],'r')
 plt.xlim(300,350)
 plt.xlabel('x [km]')
 plt.ylabel('z [m]')
-plt.title('Lower surface at x = 5 km')
+plt.title('Lower surface at y = 5 km')
 
 plt.figure(figsize=(12,6))
 plt.plot(lowerSurface_smoth[:,100],'b');plt.plot(lowerSurface[:,100],'r')
-plt.xlabel('x [km]')
+plt.xlabel('y [km]')
 plt.ylabel('z [m]')
-plt.title('Lower surface at y = 400 km')
+plt.title('Lower surface at x = 400 km')
 
 
 plt.figure(figsize=(12,6))
 plt.plot(lowerSurface_smoth[:,200],'b');plt.plot(lowerSurface[:,200],'r')
-plt.xlabel('x [km]')
+plt.xlabel('y [km]')
 plt.ylabel('z [m]')
-plt.title('Lower surface at y = 500 km')
+plt.title('Lower surface at x = 500 km')
 plt.show()
 
 # interpolate to coarse grid
@@ -228,79 +228,73 @@ p_ocean = rho_warm * g * z
 min_thickness = 60.
 area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])
 area[thick_new==0]=0.0
-im,jm = thick_new.shape
+jm,im = thick_new.shape
 for i in range(im):
     for j in range(jm):
-	    if area[i,j] == 0:
+	    if area[j,i] == 0:
                print 'Outside ice shelf!'
             else:
-               ind = np.nonzero(z<=-B[i,j])[-1][-1]
-	       if (p_ice[i,j] > p_ocean[ind]):
+               ind = np.nonzero(z<=-B[j,i])[-1][-1]
+	       if (p_ice[j,i] > p_ocean[ind]):
 		    print 'Grounded!' 
 	       else:
 		    # find height where ice shelf will float (if not grounded)
-		    ice_draft=-np.interp(p_ice[i,j], p_ocean, z)
-		    if ice_draft>(B[i,j]+min_thickness):
+		    ice_draft=-np.interp(p_ice[j,i], p_ocean, z)
+		    if ice_draft>(B[j,i]+min_thickness):
                        print 'Floating and min_thickness is fine.'
 		    else:
-		       if ((ice_draft-B[i,j])>=min_thickness/2.):
-                            thick_new[i,j]=thick_new[i,j] - min_thickness/2.
+		       if ((ice_draft-B[j,i])>=min_thickness/2.):
+                            thick_new[j,i]=thick_new[j,i] - min_thickness/2.
                        else:
-                            thick_new[i,j]=thick_new[i,j] + min_thickness/2.
+                            thick_new[j,i]=thick_new[j,i] + min_thickness/2.
 
 
 # add tice where needed to avoid small space between ice/ocean
 # work in terms of indices j=74:100
-for j in range(70,101):
-    for i in range(im):
-        ind = np.nonzero(z<=-B[i,j])[-1][-1]
-        if (p_ice[i,j] > p_ocean[ind+1]): # add +1 to make sure it is grounded 
-           print 'Grounded at (x,y)',x[j],y[i]
+for i in range(70,101):
+    for j in range(jm):
+        ind = np.nonzero(z<=-B[j,i])[-1][-1]
+        if (p_ice[j,i] > p_ocean[ind+1]): # add +1 to make sure it is grounded 
+           print 'Grounded at (x,y)',x[i],y[j]
         else:
             # 
-            if (p_ice[i,j] < (p_ocean[ind] + min_thickness*g*rho_warm.mean())): 
-               print 'Open cavity at (x,y)',x[j],y[i]
+            if (p_ice[j,i] < (p_ocean[ind] + min_thickness*g*rho_warm.mean())): 
+               print 'Open cavity at (x,y)',x[i],y[j]
             else: 
-               print 'Adding '+ str(min_thickness) + ' (m) at (x,y,) ',x[j],y[i]
-               thick_new[i,j]=thick_new[i,j] + 2 * min_thickness 
+               print 'Adding '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j]
+               thick_new[j,i]=thick_new[j,i] + 2 * min_thickness 
 
 # update mass and pressure
 mass = thick_new * rho_ice
 p_ice = mass * g
 # go over same region again and check neighbors
-for j in range(70,101):
-    for i in range(1,im-1):
-        ind = np.nonzero(z<=-B[i,j])[-1][-1]
-        ind_l = np.nonzero(z<=-B[i-1,j])[-1][-1]
-        ind_r = np.nonzero(z<=-B[i+1,j])[-1][-1]
-        if ((p_ice[i,j] < p_ocean[ind]) and (p_ice[i-1,j] > p_ocean[ind_l]) \
-           and p_ice[i+1,j] > p_ocean[ind_r]):
-           print 'Adding '+ str(min_thickness/2.) + ' (m) at (x,y,) ',x[j],y[i]
-           thick_new[i,j]=thick_new[i,j] + min_thickness/2.
+for i in range(70,101):
+    for j in range(1,jm-1):
+        ind = np.nonzero(z<=-B[j,i])[-1][-1]
+        ind_l = np.nonzero(z<=-B[j-1,i])[-1][-1]
+        ind_r = np.nonzero(z<=-B[j+1,i])[-1][-1]
+        if ((p_ice[j,i] < p_ocean[ind]) and (p_ice[j-1,i] > p_ocean[ind_l]) \
+           and p_ice[j+1,i] > p_ocean[ind_r]):
+           print 'Adding '+ str(min_thickness/2.) + ' (m) at (x,y,) ',x[i],y[j]
+           thick_new[j,i]=thick_new[j,i] + min_thickness/2.
 
 # remove ice to avoid small cavities and allow water to move
-for j in range(101,125):
-    for i in range(im):
-	ind = np.nonzero(z<=-B[i,j])[-1][-1]       
-        if (p_ice[i,j] < (p_ocean[ind] - min_thickness*g*rho_warm.mean())):
-           print 'Open at (x,y)',x[j],y[i]
+for i in range(101,125):
+    for j in range(jm):
+	ind = np.nonzero(z<=-B[j,i])[-1][-1]       
+        if (p_ice[j,i] < (p_ocean[ind] - min_thickness*g*rho_warm.mean())):
+           print 'Open at (x,y)',x[i],y[j]
         else:
-           print 'Removing '+ str(min_thickness) + ' (m) at (x,y,) ',x[j],y[i]	
-           thick_new[i,j]=thick_new[i,j] - min_thickness
+           print 'Removing '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j]	
+           thick_new[j,i]=thick_new[j,i] - min_thickness
 
 # update mass and pressure
 mass = thick_new * rho_ice
 p_ice = mass * g
-# go over same region again and check neighbors
-#for j in range(101:125):
-#    for i in range(1,im-1):
-#        ind = np.nonzero(z<=-B[i,j])[-1][-1]
-#        ind_l = np.nonzero(z<=-B[i-1,j])[-1][-1]
-#        ind_r = np.nonzero(z<=-B[i+1,j])[-1][-1]
-
+# go over same region again and check neighbors ?
 
 #smooth one mor etime
-sigma = [2,2] # (x,y) the standard deviation of the distribution
+sigma = [2,2] # (y,x) the standard deviation of the distribution
 thick_new = gaussian_filter(thick_new,sigma)
 
 # remove ice < min_thickness
@@ -312,13 +306,13 @@ area[thick_new==0]=0.0
 
 #save into netcdf file
 # 3D
-file3D.variables['area'][:,:] = area[:,:].T
-file3D.variables['thick'][:,:] = thick_new[:,:].T
+file3D.variables['area'][:,:] = area[:,:]
+file3D.variables['thick'][:,:] = thick_new[:,:]
 
-# 2D (middle of the domain)
-for i in range(file2D.variables['area'].shape[1]):
-    file2D.variables['area'][:,i] = area[20,:]
-    file2D.variables['thick'][:,i] = thick_new[20,:]
+# 2D (middle of the domain) y = 40 km
+for j in range(file2D.variables['area'].shape[0]):
+    file2D.variables['area'][j,:] = area[20,:]
+    file2D.variables['thick'][j,:] = thick_new[20,:]
 
 file2D.close()
 file3D.close()

@@ -297,9 +297,8 @@ p_ice = mass * g
 sigma = [2,2] # (y,x) the standard deviation of the distribution
 thick_new = gaussian_filter(thick_new,sigma)
 
-# remove ice < min_thickness
-#thick_new[thick_new<min_thickness/4.] = 0.0
-#thick_new[thick_new<100.] = 0.0
+# remove ice < 0.1 m
+thick_new[thick_new<0.1] = 0.0
 
 # update area
 area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])

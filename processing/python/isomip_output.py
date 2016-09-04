@@ -56,7 +56,7 @@ def driver(args):
    # bedrock
    depth = Dataset('ocean_geometry.nc').variables['D'][:]
    # area under shelf 
-   shelf_area = Dataset('INPUT/Ocean1_3D.nc').variables['area'][:]
+   shelf_area = Dataset('MOM_Shelf_IC.nc').variables['shelf_area'][0,:,:]
    # base of STATIC ice shelf, which is ssh(t=0); make it positive
    ice_base = -Dataset('ISOMIP_IC.nc').variables['ave_ssh'][0,:,:]
    ice_base[ice_base<1e-5] = 0.0
@@ -117,9 +117,9 @@ def driver(args):
    # horizontal fields
    
    # bathymetry (negative)
-   depth = -mask_grounded_ice(depth,depth,ice_base)
-   depth.fill_value=0.0
-   saveXY(depth,'bathymetry')
+   bathymetry = -mask_grounded_ice(depth,depth,ice_base)
+   bathymetry.fill_value=0.0
+   saveXY(bathymetry,'bathymetry')
 
    # meltRate, already masked above
    melt = melt/(3600.*24*365) # in m/s
@@ -128,31 +128,31 @@ def driver(args):
    # frictionVelocity
    ustar_shelf = Dataset('ocean_month.nc').variables['ustar_shelf'][:]
    # mask open ocean and grounded ice
-   #ustar_shelf = mask_grounded_ice(ustar_shelf,depth,ice_base)
+   ustar_shelf = mask_grounded_ice(ustar_shelf,depth,ice_base)
    ustar_shelf = mask_ocean(ustar_shelf,shelf_area)
    saveXY(ustar_shelf,'frictionVelocity')
 
    # thermalDriving
    thermal_driving = Dataset('ocean_month.nc').variables['thermal_driving'][:]
-   #thermal_driving = mask_grounded_ice(thermal_driving,depth,ice_base)
+   thermal_driving = mask_grounded_ice(thermal_driving,depth,ice_base)
    thermal_driving = mask_ocean(thermal_driving,shelf_area)
    saveXY(thermal_driving,'thermalDriving')
 
    # halineDriving
    haline_driving = Dataset('ocean_month.nc').variables['haline_driving'][:]
-   #haline_driving = mask_grounded_ice(haline_driving,depth,ice_base)
+   haline_driving = mask_grounded_ice(haline_driving,depth,ice_base)
    haline_driving = mask_ocean(haline_driving,shelf_area)
    saveXY(haline_driving,'halineDriving')
 
    # uBoundaryLayer
    u_ml = Dataset('ocean_month.nc').variables['u_ml'][:]
-   #u_ml = mask_grounded_ice(u_ml,depth,ice_base)
+   u_ml = mask_grounded_ice(u_ml,depth,ice_base)
    u_ml = mask_ocean(u_ml,shelf_area)
    saveXY(u_ml,'uBoundaryLayer')
 
    # vBoundaryLayer
    v_ml = Dataset('ocean_month.nc').variables['v_ml'][:]
-   #v_ml = mask_grounded_ice(v_ml,depth,ice_base)
+   v_ml = mask_grounded_ice(v_ml,depth,ice_base)
    v_ml = mask_ocean(v_ml,shelf_area)
    saveXY(v_ml,'vBoundaryLayer')
 
@@ -162,21 +162,53 @@ def driver(args):
    iceDraft = mask_grounded_ice(ice_base,depth,ice_base)
    iceDraft = mask_ocean(iceDraft,shelf_area)
    saveXY(-iceDraft,'iceDraft')
+   
+   # data from ocean_month_z
+   temp_z = Dataset('ocean_month_z.nc').variables['temp'][:]
+   salt_z = Dataset('ocean_month_z.nc').variables['salt'][:]
+   
+   # data at bottom most cell
+   bottomTemperature = get_bottom_data(temp_z)
+   bottomSalinity = get_bottom_data(salt_z)
+   saveXY(bottomTemperature,'bottomTemperature')
+   saveXY(bottomSalinity,'bottomSalinity')
+
+   # XZ y = 40 km (j=20)
+
+
+   # YZ x = 520 km (i=100)
    # write time properly
 
    print('Done!')
    return
 
+def get_bottom_data(data):
+    '''
+    Return a 3D array (time,y,x) with data at the bottom most cell of each column. 
+    Data is already masked where there is no ocean.
+    '''
+    NT,NK,NY,NX = data.shape
+    bottom_data = np.zeros((NT,NY,NX))
+    for j in range(NY):
+      for i in range(NX):
+          # ice and bottom are static, so we can get indies at t = 0 since they dont change.
+          ind = np.nonzero(data[0,:,j,i]!= data.fill_value)[0]
+          if ind.any():
+             bottom_data[:,j,i] = data[:,ind[-1],j,i]
+          else:
+             bottom_data[:,j,i] = np.nan
+
+    return np.ma.masked_invalid(bottom_data)
+
 def saveXY(var,varname):
    '''
    Save 2D (x,y) or 3D array (time,x,y) into the netCDF file.
    '''
-   if len(var.shape) == 2:
-      ncwrite(name,varname,var) # needs to tanspose it
-   else:
+   #if len(var.shape) == 2:
+   ncwrite(name,varname,var) # needs to tanspose it
+   #else:
      #var = var.transpose(0, 2, 1)
-     ncwrite(name,varname,var)
-
+   #  ncwrite(name,varname,var)
    return
 
 def mean_tracer(area,h,var,varname,units):

@@ -40,7 +40,7 @@ plt.contourf(X/1.0e3,Y/1.0e3,B)
 plt.colorbar()
 plt.xlabel('x (km)')
 plt.ylabel('y (km)')
-plt.show()
+#plt.show()
 
 # Initial T/S
 def get_rho(S,T):
@@ -71,7 +71,7 @@ plt.title('Cold (r), Warm (b)')
 plt.xlabel('Density (kg/m^3)')
 plt.ylabel('Depth (m)')
 plt.grid()
-plt.show()
+#plt.show()
 
 # ice shelf
 # read provided netcdf
@@ -83,15 +83,15 @@ lowerSurface = netCDF4.Dataset(ncpath).variables['lowerSurface'][:]
 [X,Y]=np.meshgrid(x/1.0e3,y/1.0e3)
 
 # read 3D file
-file3D = netCDF4.Dataset('../ncfiles/Ocean1_3D.nc','r+')
+file3D = netCDF4.Dataset('../ncfiles/Ocean1_3D_cliff.nc','r+')
 # read 2D file
-file2D = netCDF4.Dataset('../ncfiles/Ocean1_2D.nc','r+')
+file2D = netCDF4.Dataset('../ncfiles/Ocean1_2D_cliff.nc','r+')
 
 thick = upperSurface - lowerSurface
-# calve when thick<100
-upperSurface[thick<100]=0.0
-lowerSurface[thick<100]=0.0
-thick = upperSurface - lowerSurface
+# apply calving
+#upperSurface[thick<100]=0.0
+#lowerSurface[thick<100]=0.0
+#thick = upperSurface - lowerSurface
 
 # original data
 plt.figure(figsize=(12,6))
@@ -118,7 +118,7 @@ front=np.nonzero(lowerSurface[0,:]==0)[0][0]
 lowerSurface_smoth = np.zeros(lowerSurface.shape)
 upperSurface_smoth = np.zeros(upperSurface.shape)
 
-sigma = [1,5] # (y,x) the standard deviation of the distribution
+sigma = [0,0] # (y,x) the standard deviation of the distribution
 #lowerSurface_smoth[:,0:front] = gaussian_filter(lowerSurface[:,0:front],sigma)
 lowerSurface_smoth = gaussian_filter(lowerSurface,sigma)
 #upperSurface_smoth[:,0:front] = gaussian_filter(upperSurface[:,0:front],sigma)
@@ -293,13 +293,27 @@ mass = thick_new * rho_ice
 p_ice = mass * g
 # go over same region again and check neighbors ?
 
-#smooth one mor etime
-sigma = [2,2] # (y,x) the standard deviation of the distribution
+#smooth one more time
+sigma = [1,1] # (y,x) the standard deviation of the distribution
 thick_new = gaussian_filter(thick_new,sigma)
 
-# remove ice < min_thickness
-#thick_new[thick_new<min_thickness/4.] = 0.0
-#thick_new[thick_new<100.] = 0.0
+# calve when thick<100
+thick_new[thick_new<100]=0.0
+
+#smooth one more time
+sigma = [1,1] # (y,x) the standard deviation of the distribution
+thick_new = gaussian_filter(thick_new,sigma)
+
+# calve when thick<100
+thick_new[thick_new<100]=0.0
+
+# manual adjustments
+#thick_new[5,103:108] = thick_new[5,102]
+thick_new[7,103:108] = thick_new[7,102]
+thick_new[5,100:107] = thick_new[5,99]
+for i in range(143,159):
+    thick_new[0:3,i] = thick_new[3,i]
+    thick_new[37::,i] = thick_new[36,i]
 
 # update area
 area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])

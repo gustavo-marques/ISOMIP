@@ -115,11 +115,6 @@ def driver(args):
    mean_tracer(ocean_area,h,salt,'meanSalinity','PSU')
 
    # horizontal fields
-   #if (args.type == 'ocean3' or args.type == 'ocean4'):
-   # iceDraft
-   # will have to works this out when we run these cases
-   iceDraft = mask_grounded_ice(ice_base,depth,ice_base)
-   saveXY(iceDraft,'iceDraft')
    
    # bathymetry (negative)
    depth = -mask_grounded_ice(depth,depth,ice_base)
@@ -133,34 +128,40 @@ def driver(args):
    # frictionVelocity
    ustar_shelf = Dataset('ocean_month.nc').variables['ustar_shelf'][:]
    # mask open ocean and grounded ice
-   ustar_shelf = mask_grounded_ice(ustar_shelf,depth,ice_base)
+   #ustar_shelf = mask_grounded_ice(ustar_shelf,depth,ice_base)
    ustar_shelf = mask_ocean(ustar_shelf,shelf_area)
    saveXY(ustar_shelf,'frictionVelocity')
 
    # thermalDriving
    thermal_driving = Dataset('ocean_month.nc').variables['thermal_driving'][:]
-   thermal_driving = mask_grounded_ice(thermal_driving,depth,ice_base)
+   #thermal_driving = mask_grounded_ice(thermal_driving,depth,ice_base)
    thermal_driving = mask_ocean(thermal_driving,shelf_area)
    saveXY(thermal_driving,'thermalDriving')
 
    # halineDriving
    haline_driving = Dataset('ocean_month.nc').variables['haline_driving'][:]
-   haline_driving = mask_grounded_ice(haline_driving,depth,ice_base)
+   #haline_driving = mask_grounded_ice(haline_driving,depth,ice_base)
    haline_driving = mask_ocean(haline_driving,shelf_area)
    saveXY(haline_driving,'halineDriving')
 
    # uBoundaryLayer
    u_ml = Dataset('ocean_month.nc').variables['u_ml'][:]
-   u_ml = mask_grounded_ice(u_ml,depth,ice_base)
+   #u_ml = mask_grounded_ice(u_ml,depth,ice_base)
    u_ml = mask_ocean(u_ml,shelf_area)
    saveXY(u_ml,'uBoundaryLayer')
 
    # vBoundaryLayer
    v_ml = Dataset('ocean_month.nc').variables['v_ml'][:]
-   v_ml = mask_grounded_ice(v_ml,depth,ice_base)
+   #v_ml = mask_grounded_ice(v_ml,depth,ice_base)
    v_ml = mask_ocean(v_ml,shelf_area)
    saveXY(v_ml,'vBoundaryLayer')
 
+   #if (args.type == 'ocean3' or args.type == 'ocean4'):
+   # iceDraft
+   # will have to works this out when we run these cases
+   iceDraft = mask_grounded_ice(ice_base,depth,ice_base)
+   iceDraft = mask_ocean(iceDraft,shelf_area)
+   saveXY(-iceDraft,'iceDraft')
    # write time properly
 
    print('Done!')
@@ -171,9 +172,9 @@ def saveXY(var,varname):
    Save 2D (x,y) or 3D array (time,x,y) into the netCDF file.
    '''
    if len(var.shape) == 2:
-      ncwrite(name,varname,var.T) # needs to tanspose it
+      ncwrite(name,varname,var) # needs to tanspose it
    else:
-     var = var.transpose(0, 2, 1)
+     #var = var.transpose(0, 2, 1)
      ncwrite(name,varname,var)
 
    return
@@ -259,7 +260,7 @@ def melt4gamma(name,area,ice_base,depth):
    # total area under ice shelf (exclude grounded ice)
    # mask area where ice base <= 300 
    area = np.ma.masked_where(ice_base<=300.,area)
-   print('Ice shelf area below 300 m and excluding grouded ice is (m^2):',area.sum())
+   print('Ice shelf area below 300 m and excluding grouded ice is (m^2): '+str(area.sum()))
    total_melt = np.zeros(melt.shape[0])
    # compute mean melt at each time
    for t in range(len(total_melt)):
@@ -298,7 +299,7 @@ def mask_grounded_ice(data,depth,base):
 
    return data
 
-def create_ncfile(exp_name, time, type): # may add exp_type
+def create_ncfile(exp_name, ocean_time, type): # may add exp_type
    """
    Creates a netcdf file with the fields required for the isomip+ experiments. Different fields are generated based on the type of experiment that is being analyzed (Ocean0, Ocean1 etc).
    """
@@ -309,7 +310,7 @@ def create_ncfile(exp_name, time, type): # may add exp_type
    nx = 240 ; ny = 40 ; nz = 144 
    # create dimensions.
    #ncfile.createDimension('nTime', None)
-   ncfile.createDimension('nTime', len(time))
+   ncfile.createDimension('nTime', len(ocean_time))
    ncfile.createDimension('nx',nx)
    ncfile.createDimension('ny',ny)
    ncfile.createDimension('nz',nz)
@@ -376,7 +377,7 @@ def create_ncfile(exp_name, time, type): # may add exp_type
    z[:] = -np.arange(2.5,720,5) 
    # time since start of simulation
    time[0] = 0.
-   time[1::] = ocean_time[0:-1]
+   time[1::] = ocean_time[0:-1] * 3600 * 24 # in secs
    #time[:] = np.array([0, 2678400, 5097600, 7776000, 1.0368e+07, 1.30464e+07, 1.56384e+07,1.83168e+07, 2.09952e+07, 2.35872e+07, 2.62656e+07, 2.88576e+07])
 
    # assign zero to variables 

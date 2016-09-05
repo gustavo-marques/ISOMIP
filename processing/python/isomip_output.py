@@ -64,12 +64,12 @@ def driver(args):
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base) 
    shelf_area = mask_ocean(shelf_area,shelf_area)
    
-   #lonh=Dataset('ocean_geometry.nc').variables['lonh'][:]
+   x=Dataset('ocean_geometry.nc').variables['lonh'][:]*1.0e3 # in m
    #lonq=Dataset('ocean_geometry.nc').variables['lonq'][:]  
-   #lath=Dataset('ocean_geometry.nc').variables['lath'][:]
+   y=Dataset('ocean_geometry.nc').variables['lath'][:]*1.0e3 # in m
    #latq=Dataset('ocean_geometry.nc').variables['latq'][:]
    #lonqs, latqs = np.meshgrid(lonq,latq)
-   #lons, lats = np.meshgrid(lonh,lath)
+   x,y = np.meshgrid(x,y)
    
    # create dictionary
    # not for now 
@@ -79,7 +79,9 @@ def driver(args):
       print("Computing mean melt rate to calibrate gamma...")
       melt4gamma(name,shelf_area,ice_base,depth)
    
-   # read time variable from montly mean
+   # read entire time variable from montly mean
+   # it might be useful to add the option of passing
+   # just part of the data (e.g., last 6 months)
    time = Dataset('ocean_month.nc').variables['time'][:]
    # create ncfile and zero fields. Each function below will corresponding values
    create_ncfile(name,time,args.type)
@@ -185,11 +187,153 @@ def driver(args):
    saveXY(temperatureYZ,'temperatureYZ')
    saveXY(salinityYZ,'salinityYZ')
 
-   # write time properly
+   # barotropic streamfunction
+   ubt = Dataset('ocean_month.nc').variables['ubtav'][:]
+   vbt = Dataset('ocean_month.nc').variables['vbtav'][:]
+   # mask grouded region
+   ubt = mask_grounded_ice(ubt,depth,ice_base)
+   vbt = mask_grounded_ice(vbt,depth,ice_base)
+   psi = get_psi(x,y,ubt,vbt)
+   saveXY(psi,'barotropicStreamfunction')
 
    print('Done!')
    return
 
+def get_psi(x,y,u,v):
+    '''
+    Loop in time and cCall flowfun to compute the streamfunction psi of a 2D flow.
+    '''
+    NT,NY,NX = u.shape
+    psi = np.zeros(u.shape)
+    for t in range(NT):
+        psi[t,:,:] = flowfun(x,y,u[t,:],v[t,:])
+
+    return psi 
+
+def flowfun(x,y,u,v,variable='psi'):
+	"""
+	FLOWFUN  Computes the potential PHI and the streamfunction PSI
+	 of a 2-dimensional flow defined by the matrices of velocity
+	 components U and V, so that
+	       d(PHI)    d(PSI)          d(PHI)    d(PSI)
+	  u =  -----  -  ----- ,    v =  -----  +  -----
+	        dx        dy              dx        dy
+	P = FLOWFUN(x,y,u,v) returns an array P of the same size as u and v,
+	which can be the velocity potential (PHI) or the streamfunction (PSI)
+	Because these scalar fields are defined up to the integration constant,
+	their absolute values are such that PHI[0,0] = PSI[0,0] = 0.
+	For a potential (irrotational) flow  PSI = 0, and the Laplacian
+	of PSI is equal to the divergence of the velocity field.
+	A solenoidal (non-divergent) flow can be described by the
+	streamfunction alone, and the Laplacian of the streamfunction
+	is equal to the vorticity (curl) of the velocity field.
+	The units of the grid coordinates are assumed to be consistent
+	with the units of the velocity components, e.g., [m] and [m/s].
+	If variable=='psi', the streamfunction (PSI) is returned.
+	If variable=='phi', the velocity potential (PHI) is returned.
+	Uses function 'cumsimp()' (Simpson rule summation).
+	Author: Kirill K. Pankratov, March 7, 1994.
+	Source: http://www-pord.ucsd.edu/~matlab/stream.htm
+	Translated to Python by Andre Paloczy, January 15, 2015.
+        Modified by Gustavo Marques, September, 2016.
+	"""
+	x,y,u,v = map(np.asanyarray, (x,y,u,v))
+
+	if not x.shape==y.shape==u.shape==v.shape:
+		print "Error: Arrays (x, y, u, v) must be of equal shape."
+		return
+
+	## Calculating grid spacings.
+	dy, _ = np.gradient(y)
+	_, dx = np.gradient(x)
+
+	ly, lx = x.shape                         # Shape of the (x,y,u,v) arrays.
+
+	## Now the main computations.
+	## Integrate velocity fields to get potential and streamfunction.
+	## Use Simpson rule summation (function CUMSIMP).
+
+	## Compute velocity potential PHI (non-rotating part).
+	if variable=='phi':
+		cx = cumsimp(u[0,:]*dx[0,:])         # Compute x-integration constant
+		cy = cumsimp(v[:,0]*dy[:,0])         # Compute y-integration constant
+		cx = np.expand_dims(cx, 0)
+		cy = np.expand_dims(cy, 1)
+		phiy = cumsimp(v*dy) + np.tile(cx, (ly,1))
+		phix = cumsimp(u.T*dx.T).T + np.tile(cy, (1,lx))
+		phi = (phix + phiy)/2.
+		return phi
+
+	## Compute streamfunction PSI (non-divergent part).
+	if variable=='psi':
+		cx = cumsimp(v[0,:]*dx[0,:])         # Compute x-integration constant
+		cy = cumsimp(u[:,0]*dy[:,0])         # Compute y-integration constant
+		cx = np.expand_dims(cx, 0)
+		cy = np.expand_dims(cy, 1)
+		psix = -cumsimp(u*dy) + np.tile(cx, (ly,1))
+		psiy = cumsimp(v.T*dx.T).T - np.tile(cy, (1,lx))
+		psi = (psix + psiy)/2.
+		return psi
+
+def cumsimp(y):
+	"""
+	F = CUMSIMP(Y)    Simpson-rule column-wise cumulative summation.
+	Numerical approximation of a function F(x) such that
+	Y(X) = dF/dX.  Each column of the input matrix Y represents
+	the value of the integrand  Y(X)  at equally spaced points
+	X = 0,1,...size(Y,1).
+	The output is a matrix  F of the same size as Y.
+	The first row of F is equal to zero and each following row
+	is the approximation of the integral of each column of matrix
+	Y up to the givem row.
+	CUMSIMP assumes continuity of each column of the function Y(X)
+	and uses Simpson rule summation.
+	Similar to the command F = CUMSUM(Y), exept for zero first
+	row and more accurate summation (under the assumption of
+	continuous integrand Y(X)).
+	Author: Kirill K. Pankratov, March 7, 1994.
+	Source: http://www-pord.ucsd.edu/~matlab/stream.htm
+	Translated to Python by Andr? Pal?czy, January 15, 2015.
+	"""
+	y = np.asanyarray(y)
+
+	## 3-point interpolation coefficients to midpoints.
+	## Second-order polynomial (parabolic) interpolation coefficients
+	## from  Xbasis = [0 1 2]  to  Xint = [.5 1.5]
+	c1 = 3/8.
+	c2 = 6/8.
+	c3 = -1/8.
+
+	if y.ndim==1:
+		y = np.expand_dims(y,1)
+		f = np.zeros((y.size,1))    # Initialize summation array.
+		squeeze_after = True
+	elif y.ndim==2:
+		f = np.zeros(y.shape)       # Initialize summation array.
+		squeeze_after = False
+	else:
+		print "Error: Input array has more than 2 dimensions."
+		return
+
+	if y.size==2:                   # If only 2 elements in columns - simple average.
+		f[1,:] = (y[0,:] + y[1,:])/2.
+		return f
+	else:                           # If more than two elements in columns - Simpson summation.
+		## Interpolate values of y to all midpoints.
+		f[1:-1,:] = c1*y[:-2,:] + c2*y[1:-1,:] + c3*y[2:,:]
+		f[2:,:] = f[2:,:] + c3*y[:-2,:] + c2*y[1:-1,:] + c1*y[2:,:]
+		f[1,:] = f[1,:]*2
+		f[-1,:] = f[-1,:]*2
+
+		## Simpson (1,4,1) rule.
+		f[1:,:] = 2*f[1:,:] + y[:-1,:] + y[1:,:]
+		f = np.cumsum(f, axis=0)/6. # Cumulative sum, 6 - denominator from the Simpson rule.
+
+	if squeeze_after:
+		f = f.squeeze()
+
+	return f
+ 
 def get_bottom_data(data):
     '''
     Return a 3D array (time,y,x) with data at the bottom most cell of each column. 

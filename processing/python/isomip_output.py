@@ -174,9 +174,17 @@ def driver(args):
    saveXY(bottomSalinity,'bottomSalinity')
 
    # XZ y = 40 km (j=20)
-
+   temperatureXZ = temp_z[:,:,20,:]
+   salinityXZ = salt_z[:,:,20,:]
+   saveXY(temperatureXZ,'temperatureXZ')
+   saveXY(salinityXZ,'salinityXZ')
 
    # YZ x = 520 km (i=100)
+   temperatureYZ = temp_z[:,:,:,100]
+   salinityYZ = salt_z[:,:,:,100]
+   saveXY(temperatureYZ,'temperatureYZ')
+   saveXY(salinityYZ,'salinityYZ')
+
    # write time properly
 
    print('Done!')

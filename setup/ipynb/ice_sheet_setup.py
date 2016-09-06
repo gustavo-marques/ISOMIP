@@ -280,11 +280,13 @@ p_ice = mass * g
 for i in range(98,120):
    for j in range(jm):
        ice_draft=-np.interp(p_ice[j,i], p_ocean, z)
-       if ice_draft>(B[j,i]+3*min_thickness):
+       if ice_draft>(B[j,i]+4*min_thickness):
           print 'Floating and min_thickness is fine.'
        else:
-          thick_new[j,i]=thick_new[j,i] - 3*min_thickness
+          thick_new[j,i]=thick_new[j,i] - 4*min_thickness
        
+thick_new[thick_new<20.] = 0.0
+
 #for i in range(101,125):
 #    for j in range(jm):
 #       ind = np.nonzero(z<=-B[j,i])[-1][-1]       
@@ -319,8 +321,8 @@ for i in range(98,120):
 #               thick_new[j,i]=thick_new[j,i] + 3 * min_thickness 
 
 # update mass and pressure
-mass = thick_new * rho_ice
-p_ice = mass * g
+#mass = thick_new * rho_ice
+#p_ice = mass * g
 # go over same region again and check neighbors
 #for i in range(70,101):
 #    for j in range(1,jm-1):
@@ -352,7 +354,7 @@ p_ice = mass * g
 #thick_new = gaussian_filter(thick_new,sigma)
 
 # remove ice < 0.1 m
-thick_new[thick_new<0.1] = 0.0
+#thick_new[thick_new<0.1] = 0.0
 
 # update area
 area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])

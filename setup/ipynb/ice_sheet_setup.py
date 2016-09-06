@@ -276,14 +276,14 @@ mass = thick_new * rho_ice
 p_ice = mass * g
 
 # assures connectivity between cells 
-# min. thickness of 2 * min_thickness
+# min. thickness of 3 * min_thickness
 for i in range(98,120):
    for j in range(jm):
        ice_draft=-np.interp(p_ice[j,i], p_ocean, z)
-       if ice_draft>(B[j,i]+2*min_thickness):
+       if ice_draft>(B[j,i]+3*min_thickness):
           print 'Floating and min_thickness is fine.'
        else:
-          thick_new[j,i]=thick_new[j,i] - 2*min_thickness
+          thick_new[j,i]=thick_new[j,i] - 3*min_thickness
        
 #for i in range(101,125):
 #    for j in range(jm):

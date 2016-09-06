@@ -266,7 +266,7 @@ for i in range(im):
 
 ocean_thick = draft - B
 ind1,ind2 = np.nonzero((ocean_thick<min_thickness) & (ocean_thick>0.))
-for i in range(len(jm)):
+for i in range(len(ind1)):
 	if(ocean_thick[ind1[i],ind2[i]] < min_thickness/4.):
 		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] + min_thickness/2.
 	else:

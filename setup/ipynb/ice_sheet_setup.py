@@ -283,7 +283,7 @@ for i in range(98,120):
        if ice_draft>(B[j,i]+2*min_thickness):
           print 'Floating and min_thickness is fine.'
        else:
-          thick_new[j,i]=thick_new[j,i] + 2*min_thickness
+          thick_new[j,i]=thick_new[j,i] - 2*min_thickness
        
 #for i in range(101,125):
 #    for j in range(jm):

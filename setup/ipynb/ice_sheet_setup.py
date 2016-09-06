@@ -250,16 +250,16 @@ for i in range(im):
 
 
 # no ocean until i = 70
-for i in range(65,71):
+for i in range(65,74):
 	for j in range(jm):
             #ind = np.nonzero(z<=-B[j,i])[-1][-1]
 	    #if (p_ice[j,i] <= p_ocean[ind+1]):
 	    print 'Adding '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j]
-	    thick_new[j,i]=thick_new[j,i] + 5 * min_thickness
+	    thick_new[j,i]=thick_new[j,i] + 6 * min_thickness
 
 # add ice where needed to avoid small space between ice/ocean
 # work in terms of indices j=74:100
-for i in range(71,101):
+for i in range(74,101):
     for j in range(jm):
         ind = np.nonzero(z<=-B[j,i])[-1][-1]
         if (p_ice[j,i] > p_ocean[ind+1]): # add +1 to make sure it is grounded 

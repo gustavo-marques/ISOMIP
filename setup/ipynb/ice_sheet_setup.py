@@ -227,7 +227,7 @@ p_ocean = rho_warm * g * z
 #    psurf = scale_factor * thickness
 
 # constrain ocean_thickness
-min_thickness = 25.0
+min_thickness = 20.0
 thick_new[thick_new<2.] = 0.0
 area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])
 area[thick_new==0]=0.0
@@ -265,12 +265,35 @@ for i in range(im):
 		            draft[j,i] = tmp2
 
 ocean_thick = draft - B
-jm,im = np.nonzero((ocean_thick<min_thickness) & (ocean_thick>0.))
+ind1,ind2 = np.nonzero((ocean_thick<min_thickness) & (ocean_thick>0.))
 for i in range(len(jm)):
-	if(ocean_thick[jm[i],im[i]] < min_thickness/4.):
-		thick_new[jm[i],im[i]] = thick_new[jm[i],im[i]] + min_thickness/2.
+	if(ocean_thick[ind1[i],ind2[i]] < min_thickness/4.):
+		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] + min_thickness/2.
 	else:
-		thick_new[jm[i],im[i]] = thick_new[jm[i],im[i]] - 3*min_thickness/4. 
+		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] - 3*min_thickness/4. 
+# update pice
+mass = thick_new * rho_ice
+p_ice = mass * g
+
+# assures connectivity between cells 
+# min. thickness of 2 * min_thickness
+for i in range(98,120):
+   for j in range(jm):
+       ice_draft=-np.interp(p_ice[j,i], p_ocean, z)
+       if ice_draft>(B[j,i]+2*min_thickness):
+          print 'Floating and min_thickness is fine.'
+       else:
+          thick_new[j,i]=thick_new[j,i] + 2*min_thickness
+       
+#for i in range(101,125):
+#    for j in range(jm):
+#       ind = np.nonzero(z<=-B[j,i])[-1][-1]       
+#        if (p_ice[j,i] < (p_ocean[ind] - min_thickness*g*rho_warm.mean())):
+#           print 'Open at (x,y)',x[i],y[j]
+#        else:
+#           print 'Removing '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j] 
+#           thick_new[j,i]=thick_new[j,i] - min_thickness
+
 
 # no ocean until i = 70
 #for i in range(65,74):

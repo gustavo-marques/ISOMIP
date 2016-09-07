@@ -147,7 +147,7 @@ plt.colorbar()
 plt.title('lowerSurface (difference)')
 plt.xlabel('x [km]')
 plt.ylabel('y [km]')
-#plt.show()
+plt.close('all')
 
 # smooth the shelf fron, just for layer model
 #sigma = 1 # this seems to be reasonable
@@ -161,55 +161,6 @@ plt.ylabel('y [km]')
 #lowerSurface_smoth[thick<100.]=0.0
 #thick_smoth = upperSurface_smoth - lowerSurface_smoth
 
-# plot again
-plt.figure(figsize=(12,6))
-plt.contourf(X,Y,upperSurface_smoth - upperSurface,50)
-plt.colorbar()
-plt.title('upperSurface (differece)')
-plt.xlabel('x [km]')
-plt.ylabel('y [km]')
-
-plt.figure(figsize=(12,6))
-plt.contourf(X,Y,lowerSurface_smoth - lowerSurface, 50)
-plt.colorbar()
-plt.title('lowerSurface (difference)')
-plt.xlabel('x [km]')
-plt.ylabel('y [km]')
-
-plt.figure(figsize=(12,6))
-plt.contourf(X,Y,thick_smoth - thick,50)
-plt.colorbar()
-plt.title('Thickness (differece)')
-plt.close('all')
-
-plt.figure(figsize=(12,6))
-plt.plot(lowerSurface_smoth[40,:],'b');plt.plot(lowerSurface[40,:],'r')
-plt.xlim(300,350)
-plt.xlabel('x [km]')
-plt.ylabel('z [m]')
-plt.title('Lower surface at y = 40 km')
-
-plt.figure(figsize=(12,6))
-plt.plot(lowerSurface_smoth[5,:],'b');plt.plot(lowerSurface[5,:],'r')
-plt.xlim(300,350)
-plt.xlabel('x [km]')
-plt.ylabel('z [m]')
-plt.title('Lower surface at y = 5 km')
-
-plt.figure(figsize=(12,6))
-plt.plot(lowerSurface_smoth[:,100],'b');plt.plot(lowerSurface[:,100],'r')
-plt.xlabel('y [km]')
-plt.ylabel('z [m]')
-plt.title('Lower surface at x = 400 km')
-
-
-plt.figure(figsize=(12,6))
-plt.plot(lowerSurface_smoth[:,200],'b');plt.plot(lowerSurface[:,200],'r')
-plt.xlabel('y [km]')
-plt.ylabel('z [m]')
-plt.title('Lower surface at x = 500 km')
-#plt.show()
-plt.close('all')
 
 # interpolate to coarse grid
 xnew=x[::2];ynew=y[::2]
@@ -217,6 +168,8 @@ f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
 thick_new=f_thick(xnew, ynew)
 x=xnew/1.0e3;y=ynew/1.0e3
 jm,im = thick_new.shape
+
+# calve ice thiner than 100 m until x=145 (before the front)
 for j in range(jm):
 	for i in range(0,146):
 		if (thick_new[j,i]<100):
@@ -305,67 +258,9 @@ for j in range(jm):
                 if (thick_new[j,i]<100):
                         thick_new[j,i] = 0.0
 
-#for i in range(101,125):
-#    for j in range(jm):
-#       ind = np.nonzero(z<=-B[j,i])[-1][-1]       
-#        if (p_ice[j,i] < (p_ocean[ind] - min_thickness*g*rho_warm.mean())):
-#           print 'Open at (x,y)',x[i],y[j]
-#        else:
-#           print 'Removing '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j] 
-#           thick_new[j,i]=thick_new[j,i] - min_thickness
-
-
-# no ocean until i = 70
-#for i in range(65,74):
-#	for j in range(jm):
-#            #ind = np.nonzero(z<=-B[j,i])[-1][-1]
-#	    #if (p_ice[j,i] <= p_ocean[ind+1]):
-#	    print 'Adding '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j]
-#	    thick_new[j,i]=thick_new[j,i] + 6 * min_thickness
-
-# add ice where needed to avoid small space between ice/ocean
-# work in terms of indices j=74:100
-#for i in range(74,101):
-#    for j in range(jm):
-#        ind = np.nonzero(z<=-B[j,i])[-1][-1]
-#        if (p_ice[j,i] > p_ocean[ind+1]): # add +1 to make sure it is grounded 
-#           print 'Grounded at (x,y)',x[i],y[j]
-#        else:
-            # 
-#            if (p_ice[j,i] < (p_ocean[ind] + min_thickness*g*rho_warm.mean())): 
-#               print 'Open cavity at (x,y)',x[i],y[j]
-#            else: 
-#               print 'Adding '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j]
-#               thick_new[j,i]=thick_new[j,i] + 3 * min_thickness 
-
-# update mass and pressure
-#mass = thick_new * rho_ice
-#p_ice = mass * g
-# go over same region again and check neighbors
-#for i in range(70,101):
-#    for j in range(1,jm-1):
-#        ind = np.nonzero(z<=-B[j,i])[-1][-1]
-#        ind_l = np.nonzero(z<=-B[j-1,i])[-1][-1]
-#        ind_r = np.nonzero(z<=-B[j+1,i])[-1][-1]
-#        if ((p_ice[j,i] < p_ocean[ind]) and (p_ice[j-1,i] > p_ocean[ind_l]) \
-#           and p_ice[j+1,i] > p_ocean[ind_r]):
-#           print 'Adding '+ str(min_thickness/2.) + ' (m) at (x,y,) ',x[i],y[j]
-#           thick_new[j,i]=thick_new[j,i] + min_thickness/2.
-
-# remove ice to avoid small cavities and allow water to move
-#for i in range(101,125):
-#    for j in range(jm):
-#	ind = np.nonzero(z<=-B[j,i])[-1][-1]       
-#        if (p_ice[j,i] < (p_ocean[ind] - min_thickness*g*rho_warm.mean())):
-#           print 'Open at (x,y)',x[i],y[j]
-#        else:
-#           print 'Removing '+ str(min_thickness) + ' (m) at (x,y,) ',x[i],y[j]	
-#           thick_new[j,i]=thick_new[j,i] - min_thickness
-
 # update mass and pressure
 mass = thick_new * rho_ice
 p_ice = mass * g
-# go over same region again and check neighbors ?
 
 #smooth one mor etime
 #sigma = [2,2] # (y,x) the standard deviation of the distribution

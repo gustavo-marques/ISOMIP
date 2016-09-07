@@ -223,34 +223,34 @@ for i in range(im):
 		            tmp2=-np.interp(tmp1, p_ocean, z)
 		            draft[j,i] = tmp2
 
-ocean_thick = draft - B
-ind1,ind2 = np.nonzero((ocean_thick<min_thickness) & (ocean_thick>0.))
-for i in range(len(ind1)):
-	if(ocean_thick[ind1[i],ind2[i]] < min_thickness/4.):
-		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] + min_thickness/2.
-	else:
-		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] - 3*min_thickness/4. 
+#ocean_thick = draft - B
+#ind1,ind2 = np.nonzero((ocean_thick<min_thickness) & (ocean_thick>0.))
+#for i in range(len(ind1)):
+#	if(ocean_thick[ind1[i],ind2[i]] < min_thickness/4.):
+#		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] + min_thickness/2.
+#	else:
+#		thick_new[ind1[i],ind2[i]] = thick_new[ind1[i],ind2[i]] - 3*min_thickness/4. 
 # update pice
-mass = thick_new * rho_ice
-p_ice = mass * g
+#mass = thick_new * rho_ice
+#p_ice = mass * g
 
 # assures connectivity between cells 
 # min. thickness of 3 * min_thickness
-for i in range(98,120):
-   for j in range(jm):
-       ice_draft=-np.interp(p_ice[j,i], p_ocean, z)
-       if ice_draft>(B[j,i]+4*min_thickness):
-          print 'Floating and min_thickness is fine.'
-       else:
-          thick_new[j,i]=thick_new[j,i] - 4*min_thickness
-
+#for i in range(98,120):
+#   for j in range(jm):
+#       ice_draft=-np.interp(p_ice[j,i], p_ocean, z)
+#       if ice_draft>(B[j,i]+4*min_thickness):
+#          print 'Floating and min_thickness is fine.'
+#       else:
+#          thick_new[j,i]=thick_new[j,i] - 4*min_thickness
+#
 # manuall changes
-thick_new[29,71]=thick_new[29,71] + min_thickness
-thick_new[27,71]=thick_new[27,71] - min_thickness
-thick_new[28,71]=thick_new[28,71] - min_thickness
-for i in range(72,90):
-	for j in np.array([7,8,29,30,31,32]):
-		thick_new[j,i]=thick_new[j,i] + min_thickness
+#thick_new[29,71]=thick_new[29,71] + min_thickness
+#thick_new[27,71]=thick_new[27,71] - min_thickness
+#thick_new[28,71]=thick_new[28,71] - min_thickness
+#for i in range(72,90):
+#	for j in np.array([7,8,29,30,31,32]):
+#		thick_new[j,i]=thick_new[j,i] + min_thickness
 
 
 for j in range(jm):
@@ -259,8 +259,8 @@ for j in range(jm):
                         thick_new[j,i] = 0.0
 
 # update mass and pressure
-mass = thick_new * rho_ice
-p_ice = mass * g
+#mass = thick_new * rho_ice
+#p_ice = mass * g
 
 #smooth one mor etime
 #sigma = [2,2] # (y,x) the standard deviation of the distribution

@@ -26,12 +26,23 @@ for j in range(jm):
 		if (h_all[j,i]<h_min):
 			print 'h_min not met at j,i',j,i
 			if (h_all[j,i] < h_min/2.): # add ice
-				thick[j,i] = thick[j,i] + (h_min - h[:,j,i].sum())
+				thick[j,i] = thick[j,i] + (h_min - h_all[j,i])
 				print 'Added at j,i',j,i
 		        else: # remove ice
 			        thick[j,i] = thick[j,i] - h_min/2.
 				print 'Removed at j,i',j,i
 
+
+for j in range(jm):
+   for i in range(99,120):
+       if np.isnan(h_all[j,i]):
+          thick[j,i] = thick[j,i] - 2*h_min
+          print 'Removed at j,i',j,i
+
+       if (h_all[j,i] < 2*h_min):
+          thick[j,i] = thick[j,i] - (2*h_min - h_all[j,i])
+          print 'Removed at j,i',j,i
+       
 
 area[thick==0]=0.0
 # 3D

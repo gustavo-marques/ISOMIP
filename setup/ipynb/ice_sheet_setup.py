@@ -216,6 +216,13 @@ xnew=x[::2];ynew=y[::2]
 f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
 thick_new=f_thick(xnew, ynew)
 x=xnew/1.0e3;y=ynew/1.0e3
+jm,im = thick_new.shape
+for j in range(jm):
+	for i in range(0,146):
+		if (thick_new[j,i]<100):
+			thick_new[j,i] = 0.0
+
+
 # compute mass (kg/m^2)
 rho_ice = 918.
 mass = thick_new * rho_ice
@@ -232,7 +239,6 @@ thick_new[thick_new<2.] = 0.0
 area = np.ones((thick_new.shape))* (xnew[1]-xnew[0]) * (ynew[1]-ynew[0])
 area[thick_new==0]=0.0
 ice_mask = np.zeros(area.shape);draft = np.zeros(area.shape)
-jm,im = thick_new.shape
 for i in range(im):
     for j in range(jm):
 	    if area[j,i] == 0:

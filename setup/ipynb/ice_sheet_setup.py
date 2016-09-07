@@ -260,7 +260,7 @@ for i in range(im):
 		    else:
 		       ice_mask[j,i]=0.25
 		       if ((ice_draft-B[j,i])<=min_thickness/4.):
-                            thick_new[j,i]=thick_new[j,i] + min_thickness/2. 
+                            thick_new[j,i]=thick_new[j,i] + min_thickness 
                             tmp1=(thick_new[j,i] * rho_ice)*g
 		       	    tmp2=-np.interp(tmp1, p_ocean, z)
                             draft[j,i] = tmp2
@@ -290,8 +290,20 @@ for i in range(98,120):
           print 'Floating and min_thickness is fine.'
        else:
           thick_new[j,i]=thick_new[j,i] - 4*min_thickness
-       
-thick_new[thick_new<20.] = 0.0
+
+# manuall changes
+thick_new[29,71]=thick_new[29,71] + min_thickness
+thick_new[27,71]=thick_new[27,71] - min_thickness
+thick_new[28,71]=thick_new[28,71] - min_thickness
+for i in range(72,90):
+	for j in np.array([7,8,29,30,31,32]):
+		thick_new[j,i]=thick_new[j,i] + min_thickness
+
+
+for j in range(jm):
+        for i in range(0,146):
+                if (thick_new[j,i]<100):
+                        thick_new[j,i] = 0.0
 
 #for i in range(101,125):
 #    for j in range(jm):

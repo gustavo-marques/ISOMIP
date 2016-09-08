@@ -161,8 +161,10 @@ def driver(args):
    #if (args.type == 'ocean3' or args.type == 'ocean4'):
    # iceDraft
    # will have to works this out when we run these cases
-   iceDraft = mask_grounded_ice(ice_base,depth,ice_base)
-   iceDraft = mask_ocean(iceDraft,shelf_area)
+   iceDraft = ice_base.copy()
+   iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
+   #iceDraft[shelf_area == 0.] = 0.0
+   iceDraft.fill_value = 720.0; iceDraft = iceDraft.filled()
    saveXY(-iceDraft,'iceDraft')
    
    # data from ocean_month_z

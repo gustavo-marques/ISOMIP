@@ -63,17 +63,15 @@ def driver(args):
    #mask grounded ice and open ocean
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base) 
    shelf_area = mask_ocean(shelf_area,shelf_area)
-   
-   x=Dataset('ocean_geometry.nc').variables['lonh'][:]*1.0e3 # in m
-   #lonq=Dataset('ocean_geometry.nc').variables['lonq'][:]  
-   y=Dataset('ocean_geometry.nc').variables['lath'][:]*1.0e3 # in m
+  
+   # x,y, at tracer points 
+   x=Dataset('ocean_geometry.nc').variables['geolon'][:]*1.0e3 # in m
+   y=Dataset('ocean_geometry.nc').variables['geolat'][:]*1.0e3 # in m
+
+   #lonq=Dataset('ocean_geometry.nc').variables['lonq'][:]
    #latq=Dataset('ocean_geometry.nc').variables['latq'][:]
    #lonqs, latqs = np.meshgrid(lonq,latq)
-   x,y = np.meshgrid(x,y)
    
-   # create dictionary
-   # not for now 
-   #data = {'name':name, 'depth':depth, 'area':area, }
 
    if args.mean4gamma:
       print("Computing mean melt rate to calibrate gamma...")
@@ -177,15 +175,21 @@ def driver(args):
    saveXY(bottomTemperature,'bottomTemperature')
    saveXY(bottomSalinity,'bottomSalinity')
 
-   # XZ y = 40 km (j=20)
-   temperatureXZ = temp_z[:,:,20,:]
-   salinityXZ = salt_z[:,:,20,:]
+   # interpolate tracers to get value at x = 520 km; y = 40 km
+   temp_xz = 0.5 * (temp_z[:,:,0:-1,:] + temp_z[:,:,1::,:])
+   salt_xz = 0.5 * (salt_z[:,:,0:-1,:] + salt_z[:,:,1::,:])
+   temp_yz = 0.5 * (temp_z[:,:,:,0:-1] + temp_z[:,:,:,1::])
+   salt_yz = 0.5 * (salt_z[:,:,:,0:-1] + salt_z[:,:,:,1::])
+
+   # XZ y = 40 km (j=19 in the interpolated grid)
+   temperatureXZ = temp_xz[:,:,19,:]
+   salinityXZ = salt_xz[:,:,19,:]
    saveXY(temperatureXZ,'temperatureXZ')
    saveXY(salinityXZ,'salinityXZ')
 
-   # YZ x = 520 km (i=100)
-   temperatureYZ = temp_z[:,:,:,100]
-   salinityYZ = salt_z[:,:,:,100]
+   # YZ x = 520 km (i=99 in the interpolated grid)
+   temperatureYZ = temp_yz[:,:,:,99]
+   salinityYZ = salt_yz[:,:,:,99]
    saveXY(temperatureYZ,'temperatureYZ')
    saveXY(salinityYZ,'salinityYZ')
 
@@ -195,16 +199,41 @@ def driver(args):
    # mask grouded region
    uhbt = mask_grounded_ice(uhbt,depth,ice_base)
    vhbt = mask_grounded_ice(vhbt,depth,ice_base)
-   psi = get_psi2D(uhbt,vhbt)
-   psi = mask_grounded_ice(psi,depth,ice_base)
-   saveXY(psi,'barotropicStreamfunction')
+   psi2D = get_psi2D(uhbt,vhbt)
+   psi2D = mask_grounded_ice(psi2D,depth,ice_base)
+   saveXY(psi2D,'barotropicStreamfunction')
+ 
+   # overturningStreamfunction
+   uh = Dataset('ocean_month_z.nc').variables['uh'][:]
+   vh = Dataset('ocean_month_z.nc').variables['vh'][:]
+   psi3D = get_psi3D(uh,vh)
+   # interpolate psi3D to get value at y = 40 km
+   psi = 0.5 * (psi3D[:,:,0:-1,:] + psi3D[:,:,1::,:])
+   saveXY(psi[:,:,19,:],'overturningStreamfunction')
 
    print('Done!')
    return
 
+def get_psi3D(u,v):
+    '''
+    Loop in time and compute the overturning streamfunction psi at h points.
+    '''
+    NT,NZ,NY,NX = u.shape
+    uh = np.zeros(u.shape); vh = np.zeros(v.shape); psi = np.zeros(u.shape)
+    # u and v at h points
+    utmp = 0.5 * (u[:,:,:,0:-1] + u[:,:,:,1::]) #u_i = 0.5(u_(i+0.5) + u_(i-0.5))
+    vtmp = 0.5 * (v[:,:,0:-1,:] + v[:,:,1::,:])
+    uh[:,:,:,1::] = utmp; uh[:,:,:,0] = 0.5*u[:,:,:,0]
+    vh[:,:,1::,:] = vtmp; vh[:,:,0,:] = 0.5*v[:,:,0,:] #v_j=1 = 0.5*v_(j=3/2)
+    for t in range(NT):
+        for k in range(NZ):
+            psi[t,k,:,:] = (-uh[t,k,:,:].cumsum(axis=0) + vh[t,k,:,:].cumsum(axis=1))*0.5
+
+    return psi
+
 def get_psi2D(u,v):
     '''
-    Loop in time and compute streamfunction psi.
+    Loop in time and compute the barotropic streamfunction psi at h points.
     '''
     NT,NY,NX = u.shape
     uh = np.zeros(u.shape); vh = np.zeros(v.shape); psi = np.zeros(u.shape)

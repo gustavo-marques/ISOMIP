@@ -204,9 +204,8 @@ def driver(args):
    saveXY(psi2D,'barotropicStreamfunction')
  
    # overturningStreamfunction
-   uh = Dataset('ocean_month_z.nc').variables['uh'][:]
-   vh = Dataset('ocean_month_z.nc').variables['vh'][:]
-   psi3D = get_psi3D(vh,depth,ice_base)
+   uh = Dataset('ocean_month.nc').variables['uh'][:]
+   psi3D = get_psi3D(uh,depth,ice_base)
    saveXY(psi3D,'overturningStreamfunction')
 
    print('Done!')
@@ -219,8 +218,11 @@ def get_psi3D(u,depth,ice_base):
     NT,NZ,NY,NX = u.shape
     psi = np.zeros((NT,NZ,NX))
     for t in range(NT):
-          u_masked = mask_grounded_ice(u[t,:],depth,ice_base)  
-          psi[t,:,:] = (u_masked.sum(axis=1).cumsum(axis=0))
+          #u_masked = mask_grounded_ice(u[t,:],depth,ice_base) 
+          u_masked = u[t,:]
+          u_masked = u_masked.sum(axis=1)
+          # sum from bottom up
+          psi[t,:,:] = np.cumsum(u_masked[::-1,:],axis=0)[::-1,:]
 
     return psi
 
@@ -262,11 +264,7 @@ def saveXY(var,varname):
    '''
    Save 2D (x,y) or 3D array (time,x,y) into the netCDF file.
    '''
-   #if len(var.shape) == 2:
-   ncwrite(name,varname,var) # needs to tanspose it
-   #else:
-     #var = var.transpose(0, 2, 1)
-   #  ncwrite(name,varname,var)
+   ncwrite(name,varname,var) 
    return
 
 def mean_tracer(area,h,var,varname,units):
@@ -397,13 +395,15 @@ def create_ncfile(exp_name, ocean_time, type): # may add exp_type
    # open a new netCDF file for writing.
    ncfile = Dataset(exp_name+'.nc','w',format='NETCDF4')
    # dimensions
-   nx = 240 ; ny = 40 ; nz = 144 
+   nx = 240 ; ny = 40 ; nz = 144; nzl = 36
    # create dimensions.
    #ncfile.createDimension('nTime', None)
    ncfile.createDimension('nTime', len(ocean_time))
    ncfile.createDimension('nx',nx)
    ncfile.createDimension('ny',ny)
    ncfile.createDimension('nz',nz)
+   ncfile.createDimension('nzl',nzl)
+   ncfile.createDimension('nzi',nzl+1)
 
    # create variables, assign units and provide decription
    x = ncfile.createVariable('x',np.dtype('float32').char,('nx',))
@@ -412,6 +412,14 @@ def create_ncfile(exp_name, ocean_time, type): # may add exp_type
    y.units = 'm'; y.description = 'y location of cell centers'
    z = ncfile.createVariable('z',np.dtype('float32').char,('nz',))
    z.units = 'm'; z.description = 'z location of cell centers'
+   # native vertical grid
+   zl = ncfile.createVariable('zl',np.dtype('float32').char,('nzl',))
+   zl.units = 'kg/m^3'; zl.description = 'Layer Target Potential Density'
+   zi = ncfile.createVariable('zi',np.dtype('float32').char,('nzi',))
+   zi.units = 'kg/m^3'; zi.description = 'Interface Target Potential Density'
+   e = ncfile.createVariable('e',np.dtype('float32').char,('nTime','nzi','ny','nx'))
+   e.units = 'm'; e.description = 'Interface Height Relative to Mean Sea Level'
+
    time = ncfile.createVariable('time',np.dtype('float32').char,('nTime',))
    time.units = 's'; time.description = 'time since start of simulation'
    meanMeltRate = ncfile.createVariable('meanMeltRate',np.dtype('float32').char,('nTime',))
@@ -446,8 +454,13 @@ def create_ncfile(exp_name, ocean_time, type): # may add exp_type
    vBoundaryLayer.units = 'm/s'; vBoundaryLayer.description = 'y-velocity in the boundary layer used to compute u*'
    barotropicStreamfunction = ncfile.createVariable('barotropicStreamfunction',np.dtype('float32').char,('nTime','ny','nx'))
    barotropicStreamfunction.units = 'm^3/s'; barotropicStreamfunction.description = 'barotropic streamfunction'
-   overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nz','nx'))
+   
+   # As of now we need to compute overturningStreamfunction in the native grid
+   overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nzl','nx'))
    overturningStreamfunction.units = 'm^3/s'; overturningStreamfunction.description = 'overturning (meridional) streamfunction'
+   #overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nz','nx'))
+   #overturningStreamfunction.units = 'm^3/s'; overturningStreamfunction.description = 'overturning (meridional) streamfunction'
+
    bottomTemperature = ncfile.createVariable('bottomTemperature',np.dtype('float32').char,('nTime','ny','nx'))   
    bottomTemperature.units = 'deg C'; bottomTemperature.description = 'temperature in the bottom grid cell of each ocean column'
    bottomSalinity = ncfile.createVariable('bottomSalinity',np.dtype('float32').char,('nTime','ny','nx'))   

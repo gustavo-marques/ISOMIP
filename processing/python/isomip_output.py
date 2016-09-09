@@ -206,28 +206,21 @@ def driver(args):
    # overturningStreamfunction
    uh = Dataset('ocean_month_z.nc').variables['uh'][:]
    vh = Dataset('ocean_month_z.nc').variables['vh'][:]
-   psi3D = get_psi3D(uh,vh)
-   # interpolate psi3D to get value at y = 40 km
-   psi = 0.5 * (psi3D[:,:,0:-1,:] + psi3D[:,:,1::,:])
-   saveXY(psi[:,:,19,:],'overturningStreamfunction')
+   psi3D = get_psi3D(vh,depth,ice_base)
+   saveXY(psi3D,'overturningStreamfunction')
 
    print('Done!')
    return
 
-def get_psi3D(u,v):
+def get_psi3D(u,depth,ice_base):
     '''
     Loop in time and compute the overturning streamfunction psi at h points.
     '''
     NT,NZ,NY,NX = u.shape
-    uh = np.zeros(u.shape); vh = np.zeros(v.shape); psi = np.zeros(u.shape)
-    # u and v at h points
-    utmp = 0.5 * (u[:,:,:,0:-1] + u[:,:,:,1::]) #u_i = 0.5(u_(i+0.5) + u_(i-0.5))
-    vtmp = 0.5 * (v[:,:,0:-1,:] + v[:,:,1::,:])
-    uh[:,:,:,1::] = utmp; uh[:,:,:,0] = 0.5*u[:,:,:,0]
-    vh[:,:,1::,:] = vtmp; vh[:,:,0,:] = 0.5*v[:,:,0,:] #v_j=1 = 0.5*v_(j=3/2)
+    psi = np.zeros((NT,NZ,NX))
     for t in range(NT):
-        for k in range(NZ):
-            psi[t,k,:,:] = (-uh[t,k,:,:].cumsum(axis=0) + vh[t,k,:,:].cumsum(axis=1))*0.5
+          u_masked = mask_grounded_ice(u[t,:],depth,ice_base)  
+          psi[t,:,:] = (u_masked.sum(axis=1).cumsum(axis=0))
 
     return psi
 

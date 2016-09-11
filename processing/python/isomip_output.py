@@ -81,8 +81,10 @@ def driver(args):
    # it might be useful to add the option of passing
    # just part of the data (e.g., last 6 months)
    time = Dataset('ocean_month.nc').variables['time'][:]
+   nzl = len(Dataset('prog.nc').variables['zl'][:])
+
    # create ncfile and zero fields. Each function below will corresponding values
-   create_ncfile(name,time,args.type)
+   create_ncfile(name,time,args.type,nzl)
 
    # load additional variables
    ocean_area = Dataset('ocean_geometry.nc').variables['Ah'][:] 
@@ -387,7 +389,7 @@ def mask_grounded_ice(data,depth,base):
 
    return data
 
-def create_ncfile(exp_name, ocean_time, type): # may add exp_type
+def create_ncfile(exp_name, ocean_time, type, nzl = 36): # may add exp_type
    """
    Creates a netcdf file with the fields required for the isomip+ experiments. Different fields are generated based on the type of experiment that is being analyzed (Ocean0, Ocean1 etc).
    """
@@ -395,7 +397,7 @@ def create_ncfile(exp_name, ocean_time, type): # may add exp_type
    # open a new netCDF file for writing.
    ncfile = Dataset(exp_name+'.nc','w',format='NETCDF4')
    # dimensions
-   nx = 240 ; ny = 40 ; nz = 144; nzl = 36
+   nx = 240 ; ny = 40 ; nz = 144
    # create dimensions.
    #ncfile.createDimension('nTime', None)
    ncfile.createDimension('nTime', len(ocean_time))

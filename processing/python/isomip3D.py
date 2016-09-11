@@ -239,8 +239,8 @@ def VTKgen(lat,lon,mask,depth=None,h=None,temp=None,salt=None,dye=None,rho=None,
  
     if shelf_base is not None and shelf_thick is not None:
        NZ_IS = 2
-       newlat=np.resize(lat,(NZ_IC,NY,NX))
-       newlon=np.resize(lon,(NZ_IC,NY,NX))
+       newlat=np.resize(lat,(NZ_IS,NY,NX))
+       newlon=np.resize(lon,(NZ_IS,NY,NX))
        dum,z = get_iceshelf(shelf_base,shelf_thick,NZ_IS)
        iceshelf = f1(dum)
        pp = f3(newlon,newlat,z)
@@ -261,7 +261,11 @@ def VTKgen(lat,lon,mask,depth=None,h=None,temp=None,salt=None,dye=None,rho=None,
 
        if rho is not None:
          rho=f1(rho)
-         data.append("Scalars(rho,name='Neutral_density')")
+         data.append("Scalars(rho,name='Rhoinsitu')")
+
+       if dye is not None:
+         dye=f1(dye)
+         data.append("Scalars(dye,name='PassiveTracer')")
 
        if u is not None and v is not None:
          if w is not None:

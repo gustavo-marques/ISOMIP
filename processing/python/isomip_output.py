@@ -38,6 +38,9 @@ def parseCommandLine():
   parser.add_argument('-n', type=str, default='Ocean0_COM_MOM6-LAYER',
       help='''The name of the experiment following the ISOMIP+ definition (expt_COM_model). This name is used to save the netCDF file. Default is Ocean0_COM_MOM6-LAYER.''')
 
+#  parser.add_argument('--test', action="store_true",
+#      help='''Write 4D versions of elevation and overtuningStreamfunction so we can use gplot. ''')
+
   parser.add_argument('--mean4gamma', help='''Compute (and save in a text file) melting over the area where ice base > 300 m and over final six months.''', action="store_true")
  
   optCmdLineArgs = parser.parse_args()
@@ -81,10 +84,10 @@ def driver(args):
    # it might be useful to add the option of passing
    # just part of the data (e.g., last 6 months)
    time = Dataset('ocean_month.nc').variables['time'][:]
-   nzl = len(Dataset('prog.nc').variables['zl'][:])
+   zi = Dataset('prog.nc').variables['zi'][:]
 
    # create ncfile and zero fields. Each function below will corresponding values
-   create_ncfile(name,time,args.type,nzl)
+   create_ncfile(name,time,args)
 
    # load additional variables
    ocean_area = Dataset('ocean_geometry.nc').variables['Ah'][:] 
@@ -207,26 +210,54 @@ def driver(args):
  
    # overturningStreamfunction
    uh = Dataset('ocean_month.nc').variables['uh'][:]
-   psi3D = get_psi3D(uh,depth,ice_base)
-   saveXY(psi3D,'overturningStreamfunction')
+   e = Dataset('ocean_month.nc').variables['e'][:]
+   osf_rho, e_ave = get_psi3D(uh,e)
+   osf = interp_osf(osf_rho, e_ave)
+   saveXY(osf,'overturningStreamfunction')
 
    print('Done!')
    return
 
-def get_psi3D(u,depth,ice_base):
+def interp_osf(osf_rho, e):
     '''
-    Loop in time and compute the overturning streamfunction psi at h points.
+    Interpolate the OSF from rho space to a fixed z spaced grid.
+    '''
+    #z = Dataset(name+'.nc','r').variables['nz'][:]
+    z = - np.arange(2.5,720.,5)
+    NT, NZ, NX = osf_rho.shape
+    osf = np.zeros((NT,len(z),NX))
+    for t in range(NT):
+        h = np.abs(np.diff(e[t,:,:],axis=0)) 
+        z0 = 0.5*(e[t,0:-1,:] + e[t,1::,:])
+        for i in range(NX):
+            if (h[:,i].sum() > 0.5):
+               # interpolate   
+               osf[t,:,i] = np.interp(-z, -z0[:,i], osf_rho[t,:,i])            
+
+    # mask
+    osf = np.ma.masked_where(np.abs(osf)<1.0e-20, osf)
+    osf = np.ma.masked_where(osf==0.0, osf)
+    return osf
+
+def get_psi3D(u,e):
+    '''
+    Loop in time and compute the overturning streamfunction psi at the grid corner points. 
+    Correspondent ocean interfaces are averaged so that the overturning streamfunction
+    can be plotted in z space.
     '''
     NT,NZ,NY,NX = u.shape
     psi = np.zeros((NT,NZ,NX))
+    enew = np.zeros((NT,NZ+1,NX))
     for t in range(NT):
-          #u_masked = mask_grounded_ice(u[t,:],depth,ice_base) 
-          u_masked = u[t,:]
-          u_masked = u_masked.sum(axis=1)
-          # sum from bottom up
-          psi[t,:,:] = np.cumsum(u_masked[::-1,:],axis=0)[::-1,:]
+          et = e[t,:,:,:]
+          ut = u[t,:]
+          #enew[t,:,:] = et.mean(axis=1)
+          enew[t,:,:] = et[:,20,:]
+          usum = ut.sum(axis=1)
+          # cumsum starting from the bottom
+          psi[t,:,:] = np.cumsum(usum[::-1,:],axis=0)[::-1,:]
 
-    return psi
+    return -psi, enew
 
 def get_psi2D(u,v):
     '''
@@ -389,11 +420,12 @@ def mask_grounded_ice(data,depth,base):
 
    return data
 
-def create_ncfile(exp_name, ocean_time, type, nzl = 36): # may add exp_type
+def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    """
    Creates a netcdf file with the fields required for the isomip+ experiments. Different fields are generated based on the type of experiment that is being analyzed (Ocean0, Ocean1 etc).
    """
 
+   type = args.type
    # open a new netCDF file for writing.
    ncfile = Dataset(exp_name+'.nc','w',format='NETCDF4')
    # dimensions
@@ -404,35 +436,35 @@ def create_ncfile(exp_name, ocean_time, type, nzl = 36): # may add exp_type
    ncfile.createDimension('nx',nx)
    ncfile.createDimension('ny',ny)
    ncfile.createDimension('nz',nz)
-   ncfile.createDimension('nzl',nzl)
-   ncfile.createDimension('nzi',nzl+1)
-
+  
    # create variables, assign units and provide decription
-   x = ncfile.createVariable('x',np.dtype('float32').char,('nx',))
-   x.units = 'm'; x.description = 'x location of cell centers'
-   y = ncfile.createVariable('y',np.dtype('float32').char,('ny',))
-   y.units = 'm'; y.description = 'y location of cell centers'
-   z = ncfile.createVariable('z',np.dtype('float32').char,('nz',))
-   z.units = 'm'; z.description = 'z location of cell centers'
-   # native vertical grid
-   zl = ncfile.createVariable('zl',np.dtype('float32').char,('nzl',))
-   zl.units = 'kg/m^3'; zl.description = 'Layer Target Potential Density'
-   zi = ncfile.createVariable('zi',np.dtype('float32').char,('nzi',))
-   zi.units = 'kg/m^3'; zi.description = 'Interface Target Potential Density'
-   e = ncfile.createVariable('e',np.dtype('float32').char,('nTime','nzi','ny','nx'))
-   e.units = 'm'; e.description = 'Interface Height Relative to Mean Sea Level'
+   x = ncfile.createVariable('nx',np.dtype('float32').char,('nx'))
+   x.units = 'm' 
+   x.description = 'x location of cell centers'
+   x.long_name = 'x location of cell centers'
+   y = ncfile.createVariable('ny',np.dtype('float32').char,('ny'))
+   y.units = 'm' 
+   y.description = 'y location of cell centers'
+   y.long_name = 'y location of cell centers'
+   z = ncfile.createVariable('nz',np.dtype('float32').char,('nz'))
+   z.units = 'm'
+   z.description = 'z location of cell centers'
+   z.long_name = 'z location of cell centers'
 
-   time = ncfile.createVariable('time',np.dtype('float32').char,('nTime',))
-   time.units = 's'; time.description = 'time since start of simulation'
-   meanMeltRate = ncfile.createVariable('meanMeltRate',np.dtype('float32').char,('nTime',))
+   time = ncfile.createVariable('nTime',np.dtype('float32').char,('nTime'))
+   time.units = 's'
+   time.description = 'time since start of simulation'
+   time.long_name = 'time since start of simulation'
+
+   meanMeltRate = ncfile.createVariable('meanMeltRate',np.dtype('float32').char,('nTime'))
    meanMeltRate.units = 'm/s'; meanMeltRate.description = 'mean melt rate averaged over area of floating ice, positive for melting'
-   totalMeltFlux = ncfile.createVariable('totalMeltFlux',np.dtype('float32').char,('nTime',))
+   totalMeltFlux = ncfile.createVariable('totalMeltFlux',np.dtype('float32').char,('nTime'))
    totalMeltFlux.units = 'kg/s'; totalMeltFlux.description = 'total flux of melt water summed over area of floating ice, positive for melting'
-   totalOceanVolume = ncfile.createVariable('totalOceanVolume',np.dtype('float32').char,('nTime',))   
+   totalOceanVolume = ncfile.createVariable('totalOceanVolume',np.dtype('float32').char,('nTime'))   
    totalOceanVolume.units = 'm^3'; totalOceanVolume.description = 'total volume of ocean'
-   meanTemperature = ncfile.createVariable('meanTemperature',np.dtype('float32').char,('nTime',))
+   meanTemperature = ncfile.createVariable('meanTemperature',np.dtype('float32').char,('nTime'))
    meanTemperature.units = 'deg C'; meanTemperature.description = 'the potential temperature averaged over the ocean volume'
-   meanSalinity = ncfile.createVariable('meanSalinity',np.dtype('float32').char,('nTime',))
+   meanSalinity = ncfile.createVariable('meanSalinity',np.dtype('float32').char,('nTime'))
    meanSalinity.units = 'PSU'; meanSalinity.description = 'the salinity averaged over the ocean volume'
    if (type == 'ocean3' or type == 'ocean4'):
      iceDraft = ncfile.createVariable('iceDraft',np.dtype('float32').char,('nTime','ny','nx'))  
@@ -458,8 +490,11 @@ def create_ncfile(exp_name, ocean_time, type, nzl = 36): # may add exp_type
    barotropicStreamfunction.units = 'm^3/s'; barotropicStreamfunction.description = 'barotropic streamfunction'
    
    # As of now we need to compute overturningStreamfunction in the native grid
-   overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nzl','nx'))
-   overturningStreamfunction.units = 'm^3/s'; overturningStreamfunction.description = 'overturning (meridional) streamfunction'
+   overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nz','nx'))
+   
+   overturningStreamfunction.units = 'm^3/s'
+   overturningStreamfunction.description = 'overturning (meridional) streamfunction'
+   overturningStreamfunction.long_name = 'overturning (meridional) streamfunction'
    #overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nz','nx'))
    #overturningStreamfunction.units = 'm^3/s'; overturningStreamfunction.description = 'overturning (meridional) streamfunction'
 

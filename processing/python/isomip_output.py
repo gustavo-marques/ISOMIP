@@ -211,53 +211,41 @@ def driver(args):
    # overturningStreamfunction
    uh = Dataset('ocean_month.nc').variables['uh'][:]
    e = Dataset('ocean_month.nc').variables['e'][:]
-   osf_rho, e_ave = get_psi3D(uh,e)
-   osf = interp_osf(osf_rho, e_ave)
+   osf = get_psi3D(uh,e, -ice_base, -depth)
    saveXY(osf,'overturningStreamfunction')
 
    print('Done!')
    return
 
-def interp_osf(osf_rho, e):
+
+def get_psi3D(u,e,shelf,depth):
     '''
-    Interpolate the OSF from rho space to a fixed z spaced grid.
+    Loop in time, interpolate uh to a fixed z spaced grid, then
+    compute the overturning streamfunction psi at the grid corner points. 
     '''
-    #z = Dataset(name+'.nc','r').variables['nz'][:]
     z = - np.arange(2.5,720.,5)
-    NT, NZ, NX = osf_rho.shape
-    osf = np.zeros((NT,len(z),NX))
-    for t in range(NT):
-        h = np.abs(np.diff(e[t,:,:],axis=0)) 
-        z0 = 0.5*(e[t,0:-1,:] + e[t,1::,:])
-        for i in range(NX):
-            if (h[:,i].sum() > 0.5):
-               # interpolate   
-               osf[t,:,i] = np.interp(-z, -z0[:,i], osf_rho[t,:,i])            
-
-    # mask
-    osf = np.ma.masked_where(np.abs(osf)<1.0e-20, osf)
-    osf = np.ma.masked_where(osf==0.0, osf)
-    return osf
-
-def get_psi3D(u,e):
-    '''
-    Loop in time and compute the overturning streamfunction psi at the grid corner points. 
-    Correspondent ocean interfaces are averaged so that the overturning streamfunction
-    can be plotted in z space.
-    '''
     NT,NZ,NY,NX = u.shape
-    psi = np.zeros((NT,NZ,NX))
-    enew = np.zeros((NT,NZ+1,NX))
+    psi = np.zeros((NT,len(z),NX))
+    enew = np.zeros((NT,NZ,NX))
     for t in range(NT):
           et = e[t,:,:,:]
           ut = u[t,:]
-          #enew[t,:,:] = et.mean(axis=1)
-          enew[t,:,:] = et[:,20,:]
-          usum = ut.sum(axis=1)
+          h = np.abs(np.diff(et[:,:],axis=0))
+          e1 = 0.5*(et[0:-1,:,:] + et[1::,:,:])
+          psi_dum = np.ones((len(z),NY,NX)) * 1.0e27
+          for j in range(NY):
+             for i in range(NX):
+                if (h[:,j,i].sum() > 0.1): # interp. to z grid
+                   ztmp = np.nonzero((z<=shelf[j,i]) & (z>=depth[j,i]))[0]
+                   psi_dum[ztmp,j,i] = np.interp(-z[ztmp], -e1[:,j,i], ut[:,j,i])
+
+          psi_dum = np.ma.masked_where(np.abs(psi_dum) >= 1.0e27, psi_dum)
+          usum = psi_dum.sum(axis=1)
           # cumsum starting from the bottom
           psi[t,:,:] = np.cumsum(usum[::-1,:],axis=0)[::-1,:]
 
-    return -psi, enew
+    psi = np.ma.masked_where(psi == 0., psi)
+    return -psi # in z space
 
 def get_psi2D(u,v):
     '''

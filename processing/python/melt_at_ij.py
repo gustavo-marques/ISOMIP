@@ -41,15 +41,18 @@ def createPlot(args):
      time = Dataset('prog.nc').variables['time'][:]
      melt = Dataset('prog.nc').variables['melt'][:,j,i]
      ustar = Dataset('prog.nc').variables['ustar_shelf'][:,j,i]
+     exch_vel_t = Dataset('prog.nc').variables['exch_vel_t'][:,j,i]
+     thermal_driving = Dataset('prog.nc').variables['thermal_driving'][:,j,i]
+
+     # these should be added in the future
+
      #u_ml = ncfile.variables['u_ml'][:,j,i]
      #v_ml = ncfile.variables['v_ml'][:,j,i]
      #h_ml = ncfile.variables['h_ML'][:,j,i]
-     exch_vel_t = Dataset('prog.nc').variables['exch_vel_t'][:,j,i]
      #exch_vel_s = ncfile.variables['exch_vel_s'][:,j,i]
      #tfreeze = ncfile.variables['tfreeze'][:,j,i]
      #mass_flux = ncfile.variables['mass_flux'][:,j,i]
      #haline_driving = ncfile.variables['haline_driving'][:,j,i]
-     thermal_driving = Dataset('prog.nc').variables['thermal_driving'][:,j,i]
      #h = ncfile.variables['h'][:,:,j,i]
      #SST = ncfile.variables['SST'][:,j,i]
      #SSS = ncfile.variables['SSS'][:,j,i]
@@ -64,6 +67,7 @@ def createPlot(args):
      tmp = (rho_sw * cw)/L
 
      n = 4
+     lwh = 2
      f, ax = plt.subplots(n, sharex=True, figsize=(18, 10))
      # estimated melting
      est_melt = tmp * exch_vel_t * thermal_driving * (86400.0*365.0/rho_fw)
@@ -71,7 +75,7 @@ def createPlot(args):
      temp_melt = tmp * exch_vel_t * thermal_driving.mean() * (86400.0*365.0/rho_fw)
      print 'recovered melt, min/max',est_melt.min(),est_melt.max()
 
-     ax[0].plot(time, melt,'k', label = 'model',lw=1.5)
+     ax[0].plot(time, melt,'k', label = 'model',lw=lwh)
      ax[0].plot(time[::4], est_melt[::4],'r*', label = 'estimated')
      ax[0].plot(time, ustar_melt,'b', label = 'melt with <ustar>')
      ax[0].plot(time, temp_melt,'g', label = 'melt with <dT>')
@@ -84,16 +88,16 @@ def createPlot(args):
      gamma = np.around(gamma, decimals=2)
      print 'gamma_t min/max', gamma.min(), gamma.max()
 
-     ax[1].plot(time, gamma, lw=1.5)
+     ax[1].plot(time, gamma, lw=lwh)
      ax[1].set_ylabel('gamma_t')
 
      # ustar
-     ax[2].plot(time, ustar, lw=1.5)
+     ax[2].plot(time, ustar, lw=lwh)
      ax[2].plot(time, ustar.mean()*np.ones(len(time)),'k', lw=1.0)
      ax[2].set_ylabel('u* [m/s]')
 
      # thermal_driving
-     ax[3].plot(time, thermal_driving, lw=1.5)
+     ax[3].plot(time, thermal_driving, lw=lwh)
      ax[3].plot(time, thermal_driving.mean()*np.ones(len(time)),'k', lw=1.0)
      ax[3].set_ylabel(r'$\Delta T$ [C]')
 

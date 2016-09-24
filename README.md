@@ -3,17 +3,17 @@ The goal of this repository is to centralize experiments setup, tests, issues/di
 
 ## Input files for the ISOMIP+ experimets
 
-* **[Ocean0_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean0/COM/)**
+* **[Ocean0_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/setup/Ocean0/COM/)**
 
-* **[Ocean0_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean0/TPY/)**
+* **[Ocean0_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/setup/Ocean0/TPY/)**
 
-* **[Ocean1_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean1/COM/)**
+* **[Ocean1_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/setup/Ocean1/COM/)**
 
-* **[Ocean1_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean1/TPY/)**
+* **[Ocean1_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/setup/Ocean1/TPY/)**
 
-* **[Ocean2_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean2/COM/)**
+* **[Ocean2_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/setup/Ocean2/COM/)**
 
-* **[Ocean2_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean2/TPY/)**
+* **[Ocean2_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/setup/Ocean2/TPY/)**
 
 
 ## TESTS
@@ -49,13 +49,13 @@ Coming soon!
 * **[Inconsistency in ALE sponge layer](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/inconsistency_ale_sponge_layer.ipynb)**
 
 ## TO DO LIST
-* **[Parameterization of vertical mixing under the ice shelf](ipynb/vertical_mixing_parameterization.ipynb)**
+* **[~~Parameterization of vertical mixing under the ice shelf~~](ipynb/vertical_mixing_parameterization.ipynb)**
  
 * **[~~Implementing sponge layer in layer mode~~](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/sponge_layer_in_layer_mode.ipynb)**
 
 * **[Impose an evaporative flux in the open ocean region to compensate the melt water](https://github.com/gustavo-marques/ISOMIP/blob/master/ipynb/evaporative_flux.ipynb)**
 
-* **[Create a script to generate the requested output](ipynb/requested_output.ipynb)**
+* **[~~Create a script to generate the requested output~~](ipynb/requested_output.ipynb)**
 
 ## Notes from discussions
 

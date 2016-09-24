@@ -1,5 +1,6 @@
-# Setting up the model domain
+Setup scripts and input files used for the MOM6/ISOMIP+ experiments.
 
-* **[Smooting and calving criteria for Ocean0 to Ocean2](ipynb/ice_sheet_setup.ipynb)**
+
+
 
 

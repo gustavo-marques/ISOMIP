@@ -1,5 +1,20 @@
 # ISOMIP+ with MOM6
-The goal of this repository is to centralize the tests, issues/difficulties and steps needed during the implementation of ISOMIP+ using MOM6 and other model components from GFDL. 
+The goal of this repository is to centralize experiments setup, tests, issues/difficulties and steps needed during the implementation of ISOMIP+ using MOM6. 
+
+## Input files for the ISOMIP+ experimets
+
+* **[Ocean0_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean0/COM/)**
+
+* **[Ocean0_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean0/TPY/)**
+
+* **[Ocean1_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean1/COM/)**
+
+* **[Ocean1_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean1/TPY/)**
+
+* **[Ocean2_COM](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean2/COM/)**
+
+* **[Ocean2_TPY](https://github.com/gustavo-marques/ISOMIP/blob/master/Ocean2/TPY/)**
+
 
 ## TESTS
 

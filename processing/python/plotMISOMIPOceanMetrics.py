@@ -1,8 +1,8 @@
+#!/Users/gmarques/anaconda/bin/python
+
 import numpy
 from netCDF4 import Dataset
-
 from optparse import OptionParser
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt

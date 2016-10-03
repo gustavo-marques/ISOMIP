@@ -1,4 +1,5 @@
-#!/usr/bin/python
+#!/Users/gmarques/anaconda/bin/python
+
 import numpy
 from optparse import OptionParser
 import os

@@ -252,11 +252,11 @@ for i in range(im):
 #	for j in np.array([7,8,29,30,31,32]):
 #		thick_new[j,i]=thick_new[j,i] + min_thickness
 
-
-for j in range(jm):
-        for i in range(0,146):
-                if (thick_new[j,i]<100):
-                        thick_new[j,i] = 0.0
+# Calving
+#for j in range(jm):
+#        for i in range(0,146):
+#                if (thick_new[j,i]<100):
+#                        thick_new[j,i] = 0.0
 
 # update mass and pressure
 #mass = thick_new * rho_ice

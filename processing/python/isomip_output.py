@@ -41,6 +41,9 @@ def parseCommandLine():
   parser.add_argument('-icfile', type=str, default='ISOMIP_IC.nc',
       help='''The name of the ocean initial condition file. Default is ISOMIP_IC.nc.''')
  
+  parser.add_argument('-isfile', type=str, default='MOM_Shelf_IC.nc',
+      help='''The name of the ice shelf initial condition file. Default is MOM_Shelf_IC.nc.''')
+
 #  parser.add_argument('--test', action="store_true",
 #      help='''Write 4D versions of elevation and overtuningStreamfunction so we can use gplot. ''')
 
@@ -62,7 +65,7 @@ def driver(args):
    # bedrock
    depth = Dataset('ocean_geometry.nc').variables['D'][:]
    # area under shelf 
-   shelf_area = Dataset(args.icfile).variables['shelf_area'][0,:,:]
+   shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
    # base of STATIC ice shelf, which is ssh(t=0); make it positive
    ice_base = -Dataset(args.icfile).variables['ave_ssh'][0,:,:]
    ice_base[ice_base<1e-5] = 0.0

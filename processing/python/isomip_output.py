@@ -38,6 +38,9 @@ def parseCommandLine():
   parser.add_argument('-n', type=str, default='Ocean0_COM_MOM6-LAYER',
       help='''The name of the experiment following the ISOMIP+ definition (expt_COM_model). This name is used to save the netCDF file. Default is Ocean0_COM_MOM6-LAYER.''')
 
+  parser.add_argument('-icfile', type=str, default='ISOMIP_IC.nc',
+      help='''The name of the ocean initial condition file. Default is ISOMIP_IC.nc.''')
+ 
 #  parser.add_argument('--test', action="store_true",
 #      help='''Write 4D versions of elevation and overtuningStreamfunction so we can use gplot. ''')
 
@@ -59,9 +62,9 @@ def driver(args):
    # bedrock
    depth = Dataset('ocean_geometry.nc').variables['D'][:]
    # area under shelf 
-   shelf_area = Dataset('MOM_Shelf_IC.nc').variables['shelf_area'][0,:,:]
+   shelf_area = Dataset(args.icfile).variables['shelf_area'][0,:,:]
    # base of STATIC ice shelf, which is ssh(t=0); make it positive
-   ice_base = -Dataset('ISOMIP_IC.nc').variables['ave_ssh'][0,:,:]
+   ice_base = -Dataset(args.icfile).variables['ave_ssh'][0,:,:]
    ice_base[ice_base<1e-5] = 0.0
    #mask grounded ice and open ocean
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base) 

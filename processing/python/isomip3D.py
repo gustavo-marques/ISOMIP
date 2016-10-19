@@ -37,6 +37,8 @@ def parseCommandLine():
 
   parser.add_argument('--oceanfile', type=str, default='prog.nc',
       help='''Name of the netCDF file with the ocean variables. Default is prog.nc.''')
+
+  parser.add_argument('--bergs', help='''Generates 3D VTK data using icebergs.''', action="store_true")
  
   optCmdLineArgs = parser.parse_args()
   global name
@@ -56,8 +58,6 @@ def driver3D(args):
     D=np.ma.masked_where(D <= 1, D)
     D.mask = np.ma.array(D); D.mask[:,:]=False
 
-    # ice shelf thickness
-    IS = Dataset('MOM_Shelf_IC.nc').variables['h_shelf'][:]
     # ice shelf base
     ssh = Dataset('ISOMIP_IC.nc').variables['ave_ssh'][0,:,:]
 
@@ -70,20 +70,31 @@ def driver3D(args):
         time = Dataset(ocean_file).variables['time'][:]
         tind = range(len(time))
 
-    # interface and layer thickness
-    e=Dataset(ocean_file).variables['e'][0,:,:,:]
-    h=Dataset(ocean_file).variables['h'][0,:,:,:]
+    if args.bergs:
+       rho_berg = 918.0
+       rho = 1030.
+       # mass of bergs can time dependent
+       mass_berg = Dataset(ocean_file).variables['mass_berg'][tind,:,:]
+       IS=(mass_berg/rho_berg)*(rho_berg/rho)
 
+    else:
+       # ice shelf thickness, static for now
+       IS = Dataset('MOM_Shelf_IC.nc').variables['h_shelf'][:]
+    
+    # interface and layer thickness
+    e=Dataset(ocean_file).variables['e'][-1,:,:,:]
+    h=Dataset(ocean_file).variables['h'][-1,:,:,:]
     # correct top and bottom, for vis pourposes
     h[0,:,:]=e[0,:,:]; h[-1,:,:]=e[-1,:,:]
-
     NZ,NY,NX=h.shape
     # create VTK bathymetry
     VTKgen(lats,lons,D.mask,depth=D,h=h,fname=name)
-
-    # create VTK ice-shelf
-    VTKgen(lats,lons,D.mask,h=h,shelf_base=ssh,shelf_thick=IS,fname=name)
-
+    
+    if tind>1:
+        # create VTK ice-shelf
+        VTKgen(lats,lons,D.mask,h=h,shelf_base=ssh,shelf_thick=IS[-1,:,:],fname=name)
+    else:
+        VTKgen(lats,lons,D.mask,h=h,shelf_base=ssh,shelf_thick=IS,fname=name)
     time_list=[] # list for time 
     #tm=2 # number of nc files
     ind=0

@@ -449,20 +449,20 @@ def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    ncfile.createDimension('nz',nz)
   
    # create variables, assign units and provide decription
-   x = ncfile.createVariable('nx',np.dtype('float32').char,('nx'))
+   x = ncfile.createVariable('x',np.dtype('float32').char,('nx'))
    x.units = 'm' 
    x.description = 'x location of cell centers'
    x.long_name = 'x location of cell centers'
-   y = ncfile.createVariable('ny',np.dtype('float32').char,('ny'))
+   y = ncfile.createVariable('y',np.dtype('float32').char,('ny'))
    y.units = 'm' 
    y.description = 'y location of cell centers'
    y.long_name = 'y location of cell centers'
-   z = ncfile.createVariable('nz',np.dtype('float32').char,('nz'))
+   z = ncfile.createVariable('z',np.dtype('float32').char,('nz'))
    z.units = 'm'
    z.description = 'z location of cell centers'
    z.long_name = 'z location of cell centers'
 
-   time = ncfile.createVariable('nTime',np.dtype('float32').char,('nTime'))
+   time = ncfile.createVariable('time',np.dtype('float32').char,('nTime'))
    time.units = 's'
    time.description = 'time since start of simulation'
    time.long_name = 'time since start of simulation'

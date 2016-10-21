@@ -532,8 +532,7 @@ def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    dx = W/nx
    dy = L/ny
    dz = max_depth/nz
-
-   x[:] = np.arange((lon[0]-(lon[1]-lon[0])*0.5)+dx*0.5,W,dx)*1.0e3
+   x[:] = np.arange((lon[0]-(lon[1]-lon[0])*0.5)+dx*0.5,W+lon[0]-0.5*dx,dx)*1.0e3
    y[:] = np.arange((lat[0]-(lat[1]-lat[0])*0.5)+dy*0.5,L,dy)*1.0e3
    z[:] = -np.arange(0.5*dz,max_depth,dz) 
    # time since start of simulation

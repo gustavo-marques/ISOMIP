@@ -33,7 +33,9 @@ def parseCommandLine():
   parser.add_argument('-time', type=int, default=0,
       help='''The time indice to save the VTK files. Default value is 0, which saves the entire
               dataset. If --time > 0, only one time instance will be saved.''')
-  
+  parser.add_argument('-dt', type=int, default=1,
+      help='''The time indice interval to save the VTK files. Default value is 1, which saves the entire
+              dataset.''') 
 
   parser.add_argument('--oceanfile', type=str, default='prog.nc',
       help='''Name of the netCDF file with the ocean variables. Default is prog.nc.''')
@@ -101,8 +103,8 @@ def driver3D(args):
     ind=0
 
     # loop through time and plot surface fields
-    for t in range(len(tind)):
-        #print 'Time is:',time[t]
+    for t in range(0,len(tind),args.dt):
+        print 'Time is:',time[t]
         # save data in the lists
         #time_list.append(date)
         # check if data has been saved

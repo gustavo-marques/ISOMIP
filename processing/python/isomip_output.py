@@ -232,16 +232,20 @@ def driver(args):
    saveXY(psi2D,'barotropicStreamfunction')
  
    # overturningStreamfunction
-   u = Dataset(args.month_file).variables['u'][:]
+   uh = Dataset(args.month_file).variables['uh'][:]
    e = Dataset(args.month_file).variables['e'][:]
-   osf = get_psi3D_new(u,e,h,x[0,:],y[:,0])
-
+   osf = get_OSF(uh,e,h,x[0,:],y[:,0])
+   osf = np.ma.masked_where(osf==0.0, osf)
    saveXY(osf,'overturningStreamfunction')
 
    print('Done!')
    return
 
-def get_psi3D_new(u,e,h,x,y):
+def get_OSF(uh,e,h,x,y):
+    '''
+    Loop in time, interpolate uh to a fixed z spaced grid, then
+    compute the overturning streamfunction psi at the grid corner points.
+    '''
     x=x*1.0e3; y=y*1.0e3
     dy = y[1]-y[0]
     nxOut = 240
@@ -254,36 +258,32 @@ def get_psi3D_new(u,e,h,x,y):
     zInterfaceOut = -dzOut*np.arange(-nzExtra, nzOut+1)
     # the z location of grid-cell centers on the output grid
     zOut = 0.5*(zInterfaceOut[0:-1] + zInterfaceOut[1:])
-    NT,NZ,NY,NX = u.shape
+    NT,NZ,NY,NX = uh.shape
     osfOut = np.zeros((NT,nzOut,NX))
     print 'Computing OSF...'
     for t in range(NT):
        print "time index {} of {}".format(t, NT)
        zInterface = e[t, :, :, :]      
-       #ht = h[t, :, :, :]
-       #ut = u[t, :, :, :]
-       # uh at h points
-       #uh = np.zeros((NZ,NY,NX)) 
-       # all but the first points
-       #uh[:,:,1::] = 0.5*(ut[:,:,0:-1]+ut[:,:,1::])
-       # recover first point
-       #uh[:,:,0] = (ut[:,:,0] - 0.5*uh[:,:,0])*2
-       ut = u[t, :, :, 0:-1]
+       # h at u points
+       h_u = 0.5 * (h[t, :, :, 0:-1] + h[t, :, :, 1::])
+       uht = uh[t, :, :, 0:-1]
+       # recover u
+       ut = uht/(h_u * dy*np.ones(uht.shape)) 
        zInterface_u = 0.5*(zInterface[:, :, 0:-1] + zInterface[:, :, 1:])
        uMask = np.ones((NZ,NY,NX-1), bool)     
 
-       dummy = computeOSF(ut, uMask, dy=dy*np.ones(ut.shape),
+       dummy = computeOSF(ut, uMask, dy=dy*np.ones(uht.shape),
                         zInterface=zInterface_u,
                         zInterfaceOut=zInterfaceOut, plot=True,
                         xPlot=x, zPlot=zInterface, tIndex=t)       
        # skip the extra points we added at the top, since those aren't part of
        # standard ISOMIP+ output
        osfOut[t,:,:] = dummy[nzExtra:, :]
-
     return osfOut
 
-def get_psi3D(u,e,shelf,depth):
+def get_psi3D_OLD(u,e,shelf,depth):
     '''
+    This is obsolete and is left here for comparison purposes.
     Loop in time, interpolate uh to a fixed z spaced grid, then
     compute the overturning streamfunction psi at the grid corner points. 
     '''

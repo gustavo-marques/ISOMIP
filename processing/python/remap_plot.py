@@ -36,7 +36,7 @@ def remap(cs,h0,e0,h,data0,z):
      if h0[:,i].sum() > 0.01: # ocean
 	h1[h<-e0[0,i]] = 0.0 # top
 	h1[h>depth[i]] = 0.0 # bottom
-	# need to account for SSH and make sure total thicknesses are 
+	# need to account for SSH and make sure total thicknesses are
 	# the same
 	dh = h0[:,i].sum() - h1.sum()
         tmp1 = np.nonzero(h1!=0.0)[0]
@@ -74,7 +74,7 @@ for t in range(tm):
     rho0 = netCDF4.Dataset('prog.nc').variables['rhoinsitu'][tind[t],:,j,:]-1000.
     h0 = netCDF4.Dataset('prog.nc').variables['h'][tind[t],:,j,:]
     e0 = netCDF4.Dataset('prog.nc').variables['e'][tind[t],:,j,:]
-   
+
     # remap
     temp1 = remap(cs,h0,e0,h,temp0,z)
     rho1 = remap(cs,h0,e0,h,rho0,z)

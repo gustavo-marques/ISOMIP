@@ -1,0 +1,23 @@
+netcdf Ocean3_shelf_mass_2D {
+dimensions:
+	TIME = UNLIMITED ; // (101 currently)
+	LAT = 4 ;
+	LON = 240 ;
+variables:
+	double TIME(TIME) ;
+		TIME:units = "days since 0001-01-01 00:00:00" ;
+		TIME:cartesian_axis = "T" ;
+		TIME:calendar = "noleap" ;
+	double LAT(LAT) ;
+		LAT:units = "km" ;
+		LAT:cartesian_axis = "Y" ;
+	double LON(LON) ;
+		LON:units = "km" ;
+		LON:cartesian_axis = "X" ;
+	double mass(TIME, LAT, LON) ;
+		mass:units = "kg m-2" ;
+		mass:standard_name = "ice shelf mass" ;
+	double area(TIME, LAT, LON) ;
+		area:units = "m2" ;
+		area:standard_name = "ice shelf area" ;
+}

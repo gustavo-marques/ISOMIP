@@ -51,9 +51,11 @@ for t in range(len(time)):
     f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
     thick_new=f_thick(xnew, ynew)
 
+    # simple calving
+    thick_new[thick_new<100.] = 0.0
     thick_new = gaussian_filter(thick_new,sigma)
-    # calving again
-    thick_new[thick_new<0.5] = 0.0
+    # calving again to remove thin ice shelf
+    thick_new[thick_new<100.] = 0.0
 
 #    x2=xnew/1.0e3;y2=ynew/1.0e3
     jm,im = thick_new.shape

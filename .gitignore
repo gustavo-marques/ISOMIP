@@ -1,4 +1,10 @@
-*.aux *.bbl *.blg *.log *.synctex.gz
-*.pyc *.swp
+*.aux
+*.bbl
+*.blg
+*.log
+*.synctex.gz
+.*
+*.pyc
+*.swp
 Ocean3_*.nc
 Ocean4_*.nc

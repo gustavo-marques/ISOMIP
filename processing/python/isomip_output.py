@@ -145,7 +145,12 @@ def driver(args):
    # horizontal fields
 
    # bathymetry (negative)
-   bathymetry = -mask_grounded_ice(depth,depth,ice_base)
+   if (args.type == 'ocean3' or args.type == 'ocean4'):
+      tmp = -mask_grounded_ice(depth,depth,ice_base)
+      bathymetry = np.repeat(tmp[np.newaxis,:,:], len(time), axis=0)
+   else:
+      bathymetry = -mask_grounded_ice(depth,depth,ice_base)
+
    bathymetry.fill_value=0.0
    saveXY(bathymetry,'bathymetry')
 

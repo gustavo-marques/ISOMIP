@@ -47,7 +47,7 @@ for t in range(len(time)):
     xnew=x[::2];ynew=y[::2]
     f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
     thick_new=f_thick(xnew, ynew)
-
+    thick_new[thick_new<100] = 0.0
     thick_new = gaussian_filter(thick_new,sigma)
     # calving again
     thick_new[thick_new<100] = 0.0

@@ -86,11 +86,30 @@ def driver(args):
    # load essential variables
    # bedrock
    depth = Dataset(args.geometry).variables['D'][:]
-   # area under shelf
-   shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
-   # base of STATIC ice shelf, which is ssh(t=0); make it positive
-   ice_base = -Dataset(args.icfile).variables['ave_ssh'][0,:,:]
-   ice_base[ice_base<1e-5] = 0.0
+   # read entire time variable from montly mean
+   # it might be useful to add the option of passing
+   # just part of the data (e.g., last 6 months)
+   time = Dataset(args.month_file).variables['time'][:]
+   zi = Dataset(args.prog_file).variables['zi'][:]
+   ocean_area = Dataset(args.geometry).variables['Ah'][:]
+   h = Dataset(args.month_file).variables['h'][:]
+   h[h<1.0e-5] = 0.0
+
+   # dimensions
+   tm = len(time); jm,im = depth.shape
+   if args.type == 'ocean3' or args.type == 'ocean4':
+     ice_base = -Dataset(args.prog_file).variables['e'][:,1,:]
+     shelf_area = np.ones(ice_base.shape) * ocean_area[0,0]
+     ice_base[ice_base<=50] = 0.0
+     shelf_area[ice_base == 0.0] = 0.0
+     ocean_area = np.repeat(ocean_area[np.newaxis,:,:], len(time), axis=0)
+   else: # ocean0/2
+     # area under shelf
+     shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
+     # base of STATIC ice shelf, which is ssh(t=0); make it positive
+     ice_base = -Dataset(args.icfile).variables['ave_ssh'][0,:,:]
+     ice_base[ice_base<1e-5] = 0.0
+
    #mask grounded ice and open ocean
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base)
    shelf_area = mask_ocean(shelf_area,shelf_area)
@@ -103,19 +122,10 @@ def driver(args):
       print("Computing mean melt rate to calibrate gamma...")
       melt4gamma(name,shelf_area,ice_base,depth,args)
 
-   # read entire time variable from montly mean
-   # it might be useful to add the option of passing
-   # just part of the data (e.g., last 6 months)
-   time = Dataset(args.month_file).variables['time'][:]
-   zi = Dataset(args.prog_file).variables['zi'][:]
-
    # create ncfile and zero fields. Each function below will corresponding values
    create_ncfile(name,time,args)
 
    # load additional variables
-   ocean_area = Dataset(args.geometry).variables['Ah'][:]
-   h = Dataset(args.month_file).variables['h'][:]
-   h[h<1.0e-5] = 0.0
    melt = Dataset(args.month_file).variables['melt'][:]
    mass_flux = Dataset(args.month_file).variables['mass_flux'][:]
    # mask open ocean and grounded ice
@@ -146,16 +156,18 @@ def driver(args):
 
    # bathymetry (negative)
    if (args.type == 'ocean3' or args.type == 'ocean4'):
-      tmp = -mask_grounded_ice(depth,depth,ice_base)
+      #tmp = -mask_grounded_ice(depth,depth,ice_base)
+      tmp = -depth.copy()
       bathymetry = np.repeat(tmp[np.newaxis,:,:], len(time), axis=0)
    else:
       bathymetry = -mask_grounded_ice(depth,depth,ice_base)
 
-   bathymetry.fill_value=0.0
+   #bathymetry.fill_value=0.0
    saveXY(bathymetry,'bathymetry')
 
    # meltRate, already masked above
    melt = melt/(3600.*24*365) # in m/s
+   melt = mask_grounded_ice(melt,depth,ice_base)
    saveXY(melt,'meltRate')
 
    # frictionVelocity
@@ -459,7 +471,7 @@ def mask_ocean(data,area):
 
    else: # 3D array
      NZ,NY,NX = data.shape
-     area=np.resize(area,(NZ,NY,NX))
+     #area=np.resize(area,(NZ,NY,NX))
      data = np.ma.masked_where(area==0,data)
 
    return  data
@@ -472,7 +484,7 @@ def mask_grounded_ice(data,depth,base):
       data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
    else: # 3D array
       NZ,NY,NX = data.shape
-      base = np.resize(base,(NZ,NY,NX))
+      #base = np.resize(base,(NZ,NY,NX))
       depth = np.resize(depth,(NZ,NY,NX))
       data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
 

@@ -86,11 +86,30 @@ def driver(args):
    # load essential variables
    # bedrock
    depth = Dataset(args.geometry).variables['D'][:]
-   # area under shelf
-   shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
-   # base of STATIC ice shelf, which is ssh(t=0); make it positive
-   ice_base = -Dataset(args.icfile).variables['ave_ssh'][0,:,:]
-   ice_base[ice_base<1e-5] = 0.0
+   # read entire time variable from montly mean
+   # it might be useful to add the option of passing
+   # just part of the data (e.g., last 6 months)
+   time = MFDataset(args.month_file).variables['time'][:]
+   zi = MFDataset(args.prog_file).variables['zi'][:]
+   ocean_area = Dataset(args.geometry).variables['Ah'][:]
+   h = MFDataset(args.month_file).variables['h'][:]
+   h[h<1.0e-5] = 0.0
+
+   # dimensions
+   tm = len(time); jm,im = depth.shape
+   if args.type == 'ocean3' or args.type == 'ocean4':
+     ice_base = -MFDataset(args.prog_file).variables['e'][:,1,:]
+     shelf_area = np.ones(ice_base.shape) * ocean_area[0,0]
+     ice_base[ice_base<=50] = 0.0
+     shelf_area[ice_base == 0.0] = 0.0
+     ocean_area = np.repeat(ocean_area[np.newaxis,:,:], len(time), axis=0)
+   else: # ocean0/2
+     # area under shelf
+     shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
+     # base of STATIC ice shelf, which is ssh(t=0); make it positive
+     ice_base = -Dataset(args.icfile).variables['ave_ssh'][0,:,:]
+     ice_base[ice_base<1e-5] = 0.0
+
    #mask grounded ice and open ocean
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base)
    shelf_area = mask_ocean(shelf_area,shelf_area)
@@ -103,28 +122,19 @@ def driver(args):
       print("Computing mean melt rate to calibrate gamma...")
       melt4gamma(name,shelf_area,ice_base,depth,args)
 
-   # read entire time variable from montly mean
-   # it might be useful to add the option of passing
-   # just part of the data (e.g., last 6 months)
-   time = Dataset(args.month_file).variables['time'][:]
-   zi = Dataset(args.prog_file).variables['zi'][:]
-
    # create ncfile and zero fields. Each function below will corresponding values
    create_ncfile(name,time,args)
 
    # load additional variables
-   ocean_area = Dataset(args.geometry).variables['Ah'][:]
-   h = Dataset(args.month_file).variables['h'][:]
-   h[h<1.0e-5] = 0.0
-   melt = Dataset(args.month_file).variables['melt'][:]
-   mass_flux = Dataset(args.month_file).variables['mass_flux'][:]
+   melt = MFDataset(args.month_file).variables['melt'][:]
+   mass_flux = MFDataset(args.month_file).variables['mass_flux'][:]
    # mask open ocean and grounded ice
    ocean_area = mask_grounded_ice(ocean_area,depth,ice_base)
    melt = mask_grounded_ice(melt,depth,ice_base)
    melt = mask_ocean(melt,shelf_area)
    # tracers
-   salt = Dataset(args.month_file).variables['salt'][:]
-   temp = Dataset(args.month_file).variables['temp'][:]
+   salt = MFDataset(args.month_file).variables['salt'][:]
+   temp = MFDataset(args.month_file).variables['temp'][:]
    rho = get_rho(salt,temp)
 
    # compute total volume
@@ -145,41 +155,48 @@ def driver(args):
    # horizontal fields
 
    # bathymetry (negative)
-   bathymetry = -mask_grounded_ice(depth,depth,ice_base)
-   bathymetry.fill_value=0.0
+   if (args.type == 'ocean3' or args.type == 'ocean4'):
+      #tmp = -mask_grounded_ice(depth,depth,ice_base)
+      tmp = -depth.copy()
+      bathymetry = np.repeat(tmp[np.newaxis,:,:], len(time), axis=0)
+   else:
+      bathymetry = -mask_grounded_ice(depth,depth,ice_base)
+
+   #bathymetry.fill_value=0.0
    saveXY(bathymetry,'bathymetry')
 
    # meltRate, already masked above
    melt = melt/(3600.*24*365) # in m/s
+   melt = mask_grounded_ice(melt,depth,ice_base)
    saveXY(melt,'meltRate')
 
    # frictionVelocity
-   ustar_shelf = Dataset(args.month_file).variables['ustar_shelf'][:]
+   ustar_shelf = MFDataset(args.month_file).variables['ustar_shelf'][:]
    # mask open ocean and grounded ice
    ustar_shelf = mask_grounded_ice(ustar_shelf,depth,ice_base)
    ustar_shelf = mask_ocean(ustar_shelf,shelf_area)
    saveXY(ustar_shelf,'frictionVelocity')
 
    # thermalDriving
-   thermal_driving = Dataset(args.month_file).variables['thermal_driving'][:]
+   thermal_driving = MFDataset(args.month_file).variables['thermal_driving'][:]
    thermal_driving = mask_grounded_ice(thermal_driving,depth,ice_base)
    thermal_driving = mask_ocean(thermal_driving,shelf_area)
    saveXY(thermal_driving,'thermalDriving')
 
    # halineDriving
-   haline_driving = Dataset(args.month_file).variables['haline_driving'][:]
+   haline_driving = MFDataset(args.month_file).variables['haline_driving'][:]
    haline_driving = mask_grounded_ice(haline_driving,depth,ice_base)
    haline_driving = mask_ocean(haline_driving,shelf_area)
    saveXY(haline_driving,'halineDriving')
 
    # uBoundaryLayer
-   u_ml = Dataset(args.month_file).variables['u_ml'][:]
+   u_ml = MFDataset(args.month_file).variables['u_ml'][:]
    u_ml = mask_grounded_ice(u_ml,depth,ice_base)
    u_ml = mask_ocean(u_ml,shelf_area)
    saveXY(u_ml,'uBoundaryLayer')
 
    # vBoundaryLayer
-   v_ml = Dataset(args.month_file).variables['v_ml'][:]
+   v_ml = MFDataset(args.month_file).variables['v_ml'][:]
    v_ml = mask_grounded_ice(v_ml,depth,ice_base)
    v_ml = mask_ocean(v_ml,shelf_area)
    saveXY(v_ml,'vBoundaryLayer')
@@ -194,8 +211,8 @@ def driver(args):
    saveXY(-iceDraft,'iceDraft')
 
    # data from ocean_month_z
-   temp_z = Dataset(args.month_z_file).variables['temp'][:]
-   salt_z = Dataset(args.month_z_file).variables['salt'][:]
+   temp_z = MFDataset(args.month_z_file).variables['temp'][:]
+   salt_z = MFDataset(args.month_z_file).variables['salt'][:]
 
    # data at bottom most cell
    bottomTemperature = get_bottom_data(temp_z)
@@ -222,8 +239,8 @@ def driver(args):
    saveXY(salinityYZ,'salinityYZ')
 
    # barotropic streamfunction
-   uhbt = Dataset(args.month_file).variables['uhbt'][:]
-   vhbt = Dataset(args.month_file).variables['vhbt'][:]
+   uhbt = MFDataset(args.month_file).variables['uhbt'][:]
+   vhbt = MFDataset(args.month_file).variables['vhbt'][:]
    # mask grouded region
    uhbt = mask_grounded_ice(uhbt,depth,ice_base)
    vhbt = mask_grounded_ice(vhbt,depth,ice_base)
@@ -232,8 +249,8 @@ def driver(args):
    saveXY(psi2D,'barotropicStreamfunction')
 
    # overturningStreamfunction
-   uh = Dataset(args.month_file).variables['uh'][:]
-   e = Dataset(args.month_file).variables['e'][:]
+   uh = MFDataset(args.month_file).variables['uh'][:]
+   e = MFDataset(args.month_file).variables['e'][:]
    osf = get_OSF(uh,e,h,x[0,:],y[:,0])
    osf = np.ma.masked_where(osf==0.0, osf)
    saveXY(osf,'overturningStreamfunction')
@@ -453,8 +470,11 @@ def mask_ocean(data,area):
      data = np.ma.masked_where(area==0,data)
 
    else: # 3D array
-     NZ,NY,NX = data.shape
-     area=np.resize(area,(NZ,NY,NX))
+
+     if len(area.shape) < 3:
+         NZ,NY,NX = data.shape
+         area=np.resize(area,(NZ,NY,NX))
+
      data = np.ma.masked_where(area==0,data)
 
    return  data
@@ -467,7 +487,7 @@ def mask_grounded_ice(data,depth,base):
       data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
    else: # 3D array
       NZ,NY,NX = data.shape
-      base = np.resize(base,(NZ,NY,NX))
+      #base = np.resize(base,(NZ,NY,NX))
       depth = np.resize(depth,(NZ,NY,NX))
       data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
 

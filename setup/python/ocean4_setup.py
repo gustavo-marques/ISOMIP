@@ -7,15 +7,12 @@ from scipy import interpolate
 
 # ice shelf
 # read provided netcdf
-ncpath='../ncfiles/Ocean3_input_geom_v1.01.nc'
+ncpath='../ncfiles/Ocean4_input_geom_v1.01.nc'
 
 # read 3D file
-file3D = netCDF4.Dataset('../ncfiles/Ocean3_shelf_mass_3D.nc','r+')
-# read 2D file
-file2D = netCDF4.Dataset('../ncfiles/Ocean3_shelf_mass_2D.nc','r+')
+file3D = netCDF4.Dataset('../ncfiles/Ocean4_shelf_mass_3D.nc','r+')
 # read IC files
-file3Dic = netCDF4.Dataset('../ncfiles/Ocean3_3D_ic.nc','r+')
-file2Dic = netCDF4.Dataset('../ncfiles/Ocean3_2D_ic.nc','r+')
+file3Dic = netCDF4.Dataset('../ncfiles/Ocean4_3D_ic.nc','r+')
 
 x = netCDF4.Dataset(ncpath).variables['x'][:]
 y = netCDF4.Dataset(ncpath).variables['y'][:]
@@ -50,12 +47,10 @@ for t in range(len(time)):
     xnew=x[::2];ynew=y[::2]
     f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
     thick_new=f_thick(xnew, ynew)
-
-    # simple calving
-    thick_new[thick_new<100.] = 0.0
+    thick_new[thick_new<100] = 0.0
     thick_new = gaussian_filter(thick_new,sigma)
-    # calving again to remove thin ice shelf
-    thick_new[thick_new<100.] = 0.0
+    # calving again
+    thick_new[thick_new<100] = 0.0
 
 #    x2=xnew/1.0e3;y2=ynew/1.0e3
     jm,im = thick_new.shape
@@ -74,25 +69,12 @@ for t in range(len(time)):
        file3Dic.variables['area'][:] = area[:,:]
        file3Dic.variables['thick'][:] = thick_new[:,:]
 
-       for j in range(file2Dic.variables['area'][:].shape[0]):
-          file2Dic.variables['area'][j,:] = area[20,:]
-          file2Dic.variables['thick'][j,:] = thick_new[20,:]
 
-
-    # 3D
     file3D.variables['area'][t,:,:] = area[:,:]
     file3D.variables['mass'][t,:,:] = mass[:,:]
     file3D.variables['TIME'][t] = time[t]/(3600.0*24.0) # in days
-    # 2D
-    file2D.variables['TIME'][t] = time[t]/(3600.0*24.0) # in days
-
-    for j in range(file2Dic.variables['area'][:].shape[0]):
-        file2D.variables['area'][t,j,:] = area[20,:]
-        file2D.variables['mass'][t,j,:] = mass[20,:]
 
 print 'Done!'
 
 file3D.close()
 file3Dic.close()
-file2D.close()
-file2Dic.close()

@@ -83,7 +83,7 @@
 
 \item Ocean boundary layer scheme: near-surface vertical mixing is parameterized with an energy consistent planetary boundary layer scheme \citep{Reichl2018}, with a minimum vertical viscosity of $10^{-2}$ m$^2$/s.
 
-\item Melt parameterization: $T_w$, $S_w$ and $u_w$ were averaged within 10 m of the ice draft; $u_w$ was averaged the to the tracer grid using four horizontal neighbors. Melting was set to zero in regions where the ice depth was less than 90 m and when the total water column thickness was less than 10 m.
+\item Melt parameterization: $T_w$, $S_w$ and $u_w$ were averaged within 20 m of the ice draft; $u_w$ was averaged the to the tracer grid using four horizontal neighbors. Melting was set to zero in regions where the ice depth was less than 90 m and when the total water column thickness was less than 10 m.
 
 \item Modifications to Topography: Interpolated to 2-km grid using a spline method\footnote{http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp2d.html\#scipy.interpolate.interp2d} then smoothed the ice thickness using a Gaussian filter\footnote{http://docs.scipy.org/doc/scipy-0.16.1/reference/generated/scipy.ndimage.filters.gaussian\_filter.html} with half-width of 1 and 5 km for the y and x direction, respectively. An offline calving criterion was used where ice thinner than 100 m was removed. To minimize pressure gradient errors due to a step-like ice cliff, this criterion was not applied near the ice front, which remained smooth. A minimum thickness of $\sim$ 40 m was maintained by decreasing the ice thickness near the grounding line.  
 
@@ -94,8 +94,8 @@
 \item Parameter values:
 
 \begin{tabular}{rl}
-$\Gamma_T$ & $0.1423$ \\
-$\Gamma_S$ & $4.743 \times 10^{-3}$ \\
+$\Gamma_T$ & $0.087$ \\
+$\Gamma_S$ & $0.0087$ \\
 $C_{D,\textrm{top}}$ & $2.5 \times 10^{-3}$
 \end{tabular}
 \end{itemize}

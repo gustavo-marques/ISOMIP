@@ -56,7 +56,7 @@
 
 %%% The "real" document content comes below...
 
-\title{Summary of Ocean0-2\_COM\_MOM6 Results}
+\title{Summary of Ocean0-2\_COM\_MOM6 Results (sigma\_zstar)}
 \author{Gustavo Marques, Alon Stern, Matthew Harrison, Olga Sergienko, \\ Alistair Adcroft and Robert Hallberg}
 
 \begin{document}
@@ -69,19 +69,19 @@
 \item Repository: https://github.com/gustavo-marques/MOM6/releases/tag/ISOMIP.v1.0 
 \item Model configuration and input files: 
 \begin{itemize}
-   \item https://github.com/gustavo-marques/ISOMIP/tree/master/setup/Ocean0/COM
+   \item https://github.com/gustavo-marques/ISOMIP/tree/master/setup/Ocean0/COM/MOM\_override.sigma\_zstar
    \item https://github.com/gustavo-marques/ISOMIP/tree/master/setup/Ocean1/COM
    \item https://github.com/gustavo-marques/ISOMIP/tree/master/setup/Ocean2/COM
+   \item Note: for the sigma\_zstar experiments MOM\_override.sigma\_zstar must be used.
 \end{itemize}
-
-\item Vertical coordinate: layered isopycnal (density) coordinate with a bulk mixed layer scheme.
+\item Vertical coordinate: following \cite{Stern2017}, we employ a coordinate system that is a hybrid between a z$^*$ and a terrain-following coordinate. Outside the ice shelf cavity, the vertical coordinate is defined by the $z^*$ formulation proposed by \cite{Adcroft2004}. However, within the cavity, model layers deform following the base of the ice shelf, as they would in a terrain-following coordinate, but with the fact that layers collapse to zero once they intersect the bottom topography, as in a $z^*$.
 \item Horizontal mixing: harmonic (del2); along-isopycnal for diffusivities and along-layer for viscosity.
-\item Vertical mixing: del2 with COM constant viscosity and diffusivity set as background values. Additional vertical mixing is also applied based on the parameterization developed by \cite{Jackson2008}, more details below. Within the mixed layer, vertical mixing is also controlled by the bulk mixed layer scheme described in \cite{Hallberg2003}.
+\item Vertical mixing: del2 with COM constant viscosity and diffusivity set as background values. Additional vertical mixing is also applied based on the parameterization developed by \cite{Jackson2008}, more details below. Within the mixed layer, vertical mixing is also controlled by the ocean boundary layer scheme described in \cite{Reichl2018}.
 \item Advection schemes: momentum - second-order centered; tracers - piecewise linear method.
 \item Equation of state: linear with ISOMIP+ coefficients.
 \item Convection parameterization: based on the parameterization developed by \cite{Jackson2008} using a critical Richardson number of $Ri_c$ = 0.25.
 
-\item Bulk mixed layer: minimum thickness of 10 m and the minimum vertical viscosity of $10^{-2}$ m$^2$/s.
+\item Ocean boundary layer scheme: near-surface vertical mixing is parameterized with an energy consistent planetary boundary layer scheme \citep{Reichl2018}, with a minimum vertical viscosity of $10^{-2}$ m$^2$/s.
 
 \item Melt parameterization: $T_w$, $S_w$ and $u_w$ were averaged within 10 m of the ice draft; $u_w$ was averaged the to the tracer grid using four horizontal neighbors. Melting was set to zero in regions where the ice depth was less than 90 m and when the total water column thickness was less than 10 m.
 
@@ -89,7 +89,7 @@
 
 \item Maintaining sea level: mass fluxes were used and no corrections were applied to maintain the sea level unchanged.  
 
-\item Deviations from COM: the model deviated from the COM vertical mixing and convection parameterization. Instead of prescribing the COM vertical viscosity/diffusivity when the local stratification was unstable, we applied the parameterization developed by \cite{Jackson2008} using a critical Richardson number of $Ri_c$ = 0.25. Within the mixed layer, vertical mixing is also controlled by the bulk mixed layer scheme described in \cite{Hallberg2003}.
+\item Deviations from COM: the model deviated from the COM vertical mixing and convection parameterization. Instead of prescribing the COM vertical viscosity/diffusivity when the local stratification was unstable, we applied the parameterization developed by \cite{Jackson2008} using a critical Richardson number of $Ri_c$ = 0.25. Within the top boundary layer, vertical mixing is also controlled by the ocean boundary layer scheme described in \cite{Reichl2018}.
 
 \item Parameter values:
 

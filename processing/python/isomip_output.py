@@ -277,9 +277,9 @@ def get_OSF(uh,e,h,x,y):
     zOut = 0.5*(zInterfaceOut[0:-1] + zInterfaceOut[1:])
     NT,NZ,NY,NX = uh.shape
     osfOut = np.zeros((NT,nzOut,NX))
-    print 'Computing OSF...'
+    print('Computing OSF...')
     for t in range(NT):
-       print "time index {} of {}".format(t, NT)
+       print("time index {} of {}".format(t, NT))
        zInterface = e[t, :, :, :]
        # h at u points
        h_u = 0.5 * (h[t, :, :, 0:-1] + h[t, :, :, 1::])
@@ -289,10 +289,14 @@ def get_OSF(uh,e,h,x,y):
        zInterface_u = 0.5*(zInterface[:, :, 0:-1] + zInterface[:, :, 1:])
        uMask = np.ones((NZ,NY,NX-1), bool)
 
+#       dummy = computeOSF(ut, uMask, dy=dy*np.ones(uht.shape),
+#                        zInterface=zInterface_u,
+#                        zInterfaceOut=zInterfaceOut, plot=True,
+#                        xPlot=x, zPlot=zInterface, tIndex=t)
        dummy = computeOSF(ut, uMask, dy=dy*np.ones(uht.shape),
                         zInterface=zInterface_u,
-                        zInterfaceOut=zInterfaceOut, plot=True,
-                        xPlot=x, zPlot=zInterface, tIndex=t)
+                        zInterfaceOut=zInterfaceOut)
+
        # skip the extra points we added at the top, since those aren't part of
        # standard ISOMIP+ output
        osfOut[t,:,:] = dummy[nzExtra:, :]
@@ -447,7 +451,7 @@ def melt4gamma(name,area,ice_base,depth,args):
 
    print('WARNING: have you checked if exp. has reached steady state?')
    # read melt over last 6 months
-   melt = Dataset(args.month_file).variables['melt'][-6::,:,:]
+   melt = MFDataset(args.month_file).variables['melt'][-6::,:,:]
    # total area under ice shelf (exclude grounded ice)
    # mask area where ice base <= 300
    area = np.ma.masked_where(ice_base<=300.,area)

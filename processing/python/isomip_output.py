@@ -227,14 +227,16 @@ def driver(args):
    salt_yz = 0.5 * (salt_z[:,:,:,0:-1] + salt_z[:,:,:,1::])
 
    # XZ y = 40 km (j=19 in the interpolated grid)
-   temperatureXZ = temp_xz[:,:,19,:]
-   salinityXZ = salt_xz[:,:,19,:]
+   j_yz = np.nonzero(y[:,0]<=40e3)[0][-1]
+   temperatureXZ = temp_xz[:,:,j_yz,:]
+   salinityXZ = salt_xz[:,:,j_yz,:]
    saveXY(temperatureXZ,'temperatureXZ')
    saveXY(salinityXZ,'salinityXZ')
 
-   # YZ x = 520 km (i=99 in the interpolated grid)
-   temperatureYZ = temp_yz[:,:,:,99]
-   salinityYZ = salt_yz[:,:,:,99]
+   # YZ x = 520 km
+   i_xz = np.nonzero(x[0,:]<=520e3)[0][-1]
+   temperatureYZ = temp_yz[:,:,:,i_xz]
+   salinityYZ = salt_yz[:,:,:,i_xz]
    saveXY(temperatureYZ,'temperatureYZ')
    saveXY(salinityYZ,'salinityYZ')
 

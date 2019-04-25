@@ -98,11 +98,12 @@ def driver(args):
    # dimensions
    tm = len(time); jm,im = depth.shape
    if args.type == 'ocean3' or args.type == 'ocean4':
-     ice_base = -MFDataset(args.prog_file).variables['e'][:,1,:]
+     #ice_base = -MFDataset(args.month_file).variables['e'][:,1,:]
+     ice_base = -MFDataset(args.month_file).variables['e'][:,0,:,:]
      shelf_area = np.ones(ice_base.shape) * ocean_area[0,0]
-     ice_base[ice_base<=50] = 0.0
+     ice_base[ice_base<=10.0] = 0.0
      shelf_area[ice_base == 0.0] = 0.0
-     ocean_area = np.repeat(ocean_area[np.newaxis,:,:], len(time), axis=0)
+     ocean_area = np.repeat(ocean_area[np.newaxis,:,:], tm, axis=0)
    else: # ocean0/2
      # area under shelf
      shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
@@ -111,6 +112,7 @@ def driver(args):
      ice_base[ice_base<1e-5] = 0.0
 
    #mask grounded ice and open ocean
+   #print ('shelf_area.shape, depth.shape, ice_base.shape',shelf_area.shape, depth.shape, ice_base.shape)
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base)
    shelf_area = mask_ocean(shelf_area,shelf_area)
 
@@ -129,6 +131,7 @@ def driver(args):
    melt = MFDataset(args.month_file).variables['melt'][:]
    mass_flux = MFDataset(args.month_file).variables['mass_flux'][:]
    # mask open ocean and grounded ice
+   #print ('ocean_area.shape, depth.shape, ice_base.shape',ocean_area.shape, depth.shape, ice_base.shape)
    ocean_area = mask_grounded_ice(ocean_area,depth,ice_base)
    melt = mask_grounded_ice(melt,depth,ice_base)
    melt = mask_ocean(melt,shelf_area)
@@ -207,7 +210,7 @@ def driver(args):
    iceDraft = ice_base.copy()
    iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
    #iceDraft[shelf_area == 0.] = 0.0
-   iceDraft.fill_value = 720.0; iceDraft = iceDraft.filled()
+   iceDraft.fill_value = 0.0; iceDraft = iceDraft.filled()
    saveXY(-iceDraft,'iceDraft')
 
    # data from ocean_month_z
@@ -215,8 +218,17 @@ def driver(args):
    salt_z = MFDataset(args.month_z_file).variables['salt'][:]
 
    # data at bottom most cell
-   bottomTemperature = get_bottom_data(temp_z)
-   bottomSalinity = get_bottom_data(salt_z)
+   if (args.type == 'ocean3' or args.type == 'ocean4'):
+     bottomTemperature = MFDataset(args.month_file).variables['temp'][:,-1,:]
+     bottomTemperature = mask_grounded_ice(bottomTemperature,depth,ice_base)
+     #bottomTemperature = mask_ocean(bottomTemperature,shelf_area)
+     bottomSalinity    = MFDataset(args.month_file).variables['salt'][:,-1,:]
+     bottomSalinity    = mask_grounded_ice(bottomSalinity,depth,ice_base)
+     #bottomSalinity    = mask_ocean(bottomSalinity,shelf_area)
+   else:
+     bottomTemperature = get_bottom_data(temp_z)
+     bottomSalinity = get_bottom_data(salt_z)
+
    saveXY(bottomTemperature,'bottomTemperature')
    saveXY(bottomSalinity,'bottomSalinity')
 
@@ -495,7 +507,8 @@ def mask_grounded_ice(data,depth,base):
       NZ,NY,NX = data.shape
       #base = np.resize(base,(NZ,NY,NX))
       depth = np.resize(depth,(NZ,NY,NX))
-      data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
+      #print('base.shape,depth.shape,data.shape',base.shape,depth.shape,data.shape)
+      data = np.ma.masked_where(base+2.0>=depth, data) # need +1 here
 
    return data
 

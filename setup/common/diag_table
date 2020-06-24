@@ -16,12 +16,12 @@
 "ocean_month_z",          1,  "months", 1, "days", "time"
 
 # month_z
-"ocean_model_z","temp","temp","ocean_month_z","all",.false.,"none",2
-"ocean_model_z","salt","salt","ocean_month_z","all",.false.,"none",2
-"ocean_model_z","u","u","ocean_month_z","all",.false.,"none",2
-"ocean_model_z","uh","uh","ocean_month_z","all",.false.,"none",2
-"ocean_model_z","v","v","ocean_month_z","all",.false.,"none",2
-"ocean_model_z","vh","vh","ocean_month_z","all",.false.,"none",2
+"ocean_model_zold","temp","temp","ocean_month_z","all",.false.,"none",2
+"ocean_model_zold","salt","salt","ocean_month_z","all",.false.,"none",2
+"ocean_model_zold","u","u","ocean_month_z","all",.false.,"none",2
+"ocean_model_zold","uh","uh","ocean_month_z","all",.false.,"none",2
+"ocean_model_zold","v","v","ocean_month_z","all",.false.,"none",2
+"ocean_model_zold","vh","vh","ocean_month_z","all",.false.,"none",2
 
 # month
 "ocean_model","temp","temp","ocean_month","all",.false.,"none",2

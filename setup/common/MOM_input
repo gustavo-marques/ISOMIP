@@ -36,6 +36,10 @@ IO_LAYOUT = 1, 1                ! default = 0
 ! === module MOM_grid ===
 
 ! === module MOM_verticalGrid ===
+Z_OUTPUT_GRID_FILE = "ISOMIP_zgrid.nc" ! default = ""
+                                ! The file that specifies the vertical grid for
+                                ! depth-space diagnostics, or blank to disable
+                                ! depth-space output.
 NUM_DIAG_COORDS = 1             ! default = 1
                                 ! The number of diagnostic vertical coordinates to use. For each coordinate, an
                                 ! entry in DIAG_COORDS must be provided.

@@ -8,7 +8,8 @@ from netCDF4 import MFDataset, Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-import os
+from datetime import datetime
+import os, subprocess
 from computeOSF import computeOSF
 
 class MyError(Exception):
@@ -31,7 +32,10 @@ def parseCommandLine():
       assumes that files/variables names are consistent with the default ISOMIP/GFDL
       options (see: https://github.com/NOAA-GFDL/MOM6-examples/tree/dev/master/ocean_on       ly/ISOMIP).
       ''',
-  epilog='Written by Gustavo Marques, Aug. 2016.')
+  epilog='Written by Gustavo Marques')
+
+  parser.add_argument('-author', type=str, default='Gustavo Marques (gmarques@ucar.edu)',
+      help='''Name and email of person creating diagnostics. Default is Gustavo Marques (gmarques@ucar.edu).''')
 
   parser.add_argument('-type', type=str, default='ocean0',
       help='''The type pf experiment that will computed (ocean0, ocean1 etc). Default is ocean0.''')
@@ -625,6 +629,15 @@ def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    #meanMeltRate[:] = np.zeros(len(time))
    #totalMeltFlux[:] = np.zeros(len(time))
    # close the file.
+   ncfile.author = args.author
+   ncfile.date = datetime.now().isoformat()
+   ncfile.created_using = os.path.basename(__file__) + ' -type ' + args.type + ' -author ' + \
+    args.author + ' -n ' + args.n + ' -icfile ' + args.icfile + ' -geometry ' + args.geometry +\
+    ' -isfile ' + args.isfile + ' -month_file ' + args.month_file + ' -month_z_file ' + args.month_z_file +\
+    ' -prog_file ' + args.prog_file + ' -nx ' + args.nx + ' -ny ' + args.ny + ' -nz ' + args.nz
+   ncfile.url = os.path.basename(__file__) + ' can be found at https://github.com/gustavo-marques/ISOMIP'
+   ncfile.git_hash = str(subprocess.check_output(["git", "describe","--always"]).strip())
+
    ncfile.close()
    print ('*** SUCCESS creating '+exp_name+'.nc!')
    return

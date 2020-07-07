@@ -8,7 +8,8 @@ from netCDF4 import MFDataset, Dataset
 import numpy as np
 import matplotlib.pyplot as plt
 import warnings
-import os
+from datetime import datetime
+import os, subprocess
 from computeOSF import computeOSF
 
 class MyError(Exception):
@@ -31,7 +32,10 @@ def parseCommandLine():
       assumes that files/variables names are consistent with the default ISOMIP/GFDL
       options (see: https://github.com/NOAA-GFDL/MOM6-examples/tree/dev/master/ocean_on       ly/ISOMIP).
       ''',
-  epilog='Written by Gustavo Marques, Aug. 2016.')
+  epilog='Written by Gustavo Marques')
+
+  parser.add_argument('-author', type=str, default='Gustavo Marques (gmarques@ucar.edu)',
+      help='''Name and email of person creating diagnostics. Default is Gustavo Marques (gmarques@ucar.edu).''')
 
   parser.add_argument('-type', type=str, default='ocean0',
       help='''The type pf experiment that will computed (ocean0, ocean1 etc). Default is ocean0.''')
@@ -98,11 +102,12 @@ def driver(args):
    # dimensions
    tm = len(time); jm,im = depth.shape
    if args.type == 'ocean3' or args.type == 'ocean4':
-     ice_base = -MFDataset(args.prog_file).variables['e'][:,1,:]
+     #ice_base = -MFDataset(args.month_file).variables['e'][:,1,:]
+     ice_base = -MFDataset(args.month_file).variables['e'][:,0,:,:]
      shelf_area = np.ones(ice_base.shape) * ocean_area[0,0]
-     ice_base[ice_base<=50] = 0.0
+     ice_base[ice_base<=10.0] = 0.0
      shelf_area[ice_base == 0.0] = 0.0
-     ocean_area = np.repeat(ocean_area[np.newaxis,:,:], len(time), axis=0)
+     ocean_area = np.repeat(ocean_area[np.newaxis,:,:], tm, axis=0)
    else: # ocean0/2
      # area under shelf
      shelf_area = Dataset(args.isfile).variables['shelf_area'][0,:,:]
@@ -111,6 +116,7 @@ def driver(args):
      ice_base[ice_base<1e-5] = 0.0
 
    #mask grounded ice and open ocean
+   #print ('shelf_area.shape, depth.shape, ice_base.shape',shelf_area.shape, depth.shape, ice_base.shape)
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base)
    shelf_area = mask_ocean(shelf_area,shelf_area)
 
@@ -129,6 +135,7 @@ def driver(args):
    melt = MFDataset(args.month_file).variables['melt'][:]
    mass_flux = MFDataset(args.month_file).variables['mass_flux'][:]
    # mask open ocean and grounded ice
+   #print ('ocean_area.shape, depth.shape, ice_base.shape',ocean_area.shape, depth.shape, ice_base.shape)
    ocean_area = mask_grounded_ice(ocean_area,depth,ice_base)
    melt = mask_grounded_ice(melt,depth,ice_base)
    melt = mask_ocean(melt,shelf_area)
@@ -207,7 +214,7 @@ def driver(args):
    iceDraft = ice_base.copy()
    iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
    #iceDraft[shelf_area == 0.] = 0.0
-   iceDraft.fill_value = 720.0; iceDraft = iceDraft.filled()
+   iceDraft.fill_value = 0.0; iceDraft = iceDraft.filled()
    saveXY(-iceDraft,'iceDraft')
 
    # data from ocean_month_z
@@ -215,8 +222,17 @@ def driver(args):
    salt_z = MFDataset(args.month_z_file).variables['salt'][:]
 
    # data at bottom most cell
-   bottomTemperature = get_bottom_data(temp_z)
-   bottomSalinity = get_bottom_data(salt_z)
+   if (args.type == 'ocean3' or args.type == 'ocean4'):
+     bottomTemperature = MFDataset(args.month_file).variables['temp'][:,-1,:]
+     bottomTemperature = mask_grounded_ice(bottomTemperature,depth,ice_base)
+     #bottomTemperature = mask_ocean(bottomTemperature,shelf_area)
+     bottomSalinity    = MFDataset(args.month_file).variables['salt'][:,-1,:]
+     bottomSalinity    = mask_grounded_ice(bottomSalinity,depth,ice_base)
+     #bottomSalinity    = mask_ocean(bottomSalinity,shelf_area)
+   else:
+     bottomTemperature = get_bottom_data(temp_z)
+     bottomSalinity = get_bottom_data(salt_z)
+
    saveXY(bottomTemperature,'bottomTemperature')
    saveXY(bottomSalinity,'bottomSalinity')
 
@@ -227,14 +243,16 @@ def driver(args):
    salt_yz = 0.5 * (salt_z[:,:,:,0:-1] + salt_z[:,:,:,1::])
 
    # XZ y = 40 km (j=19 in the interpolated grid)
-   temperatureXZ = temp_xz[:,:,19,:]
-   salinityXZ = salt_xz[:,:,19,:]
+   j_yz = np.nonzero(y[:,0]<=40e3)[0][-1]
+   temperatureXZ = temp_xz[:,:,j_yz,:]
+   salinityXZ = salt_xz[:,:,j_yz,:]
    saveXY(temperatureXZ,'temperatureXZ')
    saveXY(salinityXZ,'salinityXZ')
 
-   # YZ x = 520 km (i=99 in the interpolated grid)
-   temperatureYZ = temp_yz[:,:,:,99]
-   salinityYZ = salt_yz[:,:,:,99]
+   # YZ x = 520 km
+   i_xz = np.nonzero(x[0,:]<=520e3)[0][-1]
+   temperatureYZ = temp_yz[:,:,:,i_xz]
+   salinityYZ = salt_yz[:,:,:,i_xz]
    saveXY(temperatureYZ,'temperatureYZ')
    saveXY(salinityYZ,'salinityYZ')
 
@@ -277,9 +295,9 @@ def get_OSF(uh,e,h,x,y):
     zOut = 0.5*(zInterfaceOut[0:-1] + zInterfaceOut[1:])
     NT,NZ,NY,NX = uh.shape
     osfOut = np.zeros((NT,nzOut,NX))
-    print 'Computing OSF...'
+    print('Computing OSF...')
     for t in range(NT):
-       print "time index {} of {}".format(t, NT)
+       print("time index {} of {}".format(t, NT))
        zInterface = e[t, :, :, :]
        # h at u points
        h_u = 0.5 * (h[t, :, :, 0:-1] + h[t, :, :, 1::])
@@ -289,10 +307,14 @@ def get_OSF(uh,e,h,x,y):
        zInterface_u = 0.5*(zInterface[:, :, 0:-1] + zInterface[:, :, 1:])
        uMask = np.ones((NZ,NY,NX-1), bool)
 
+#       dummy = computeOSF(ut, uMask, dy=dy*np.ones(uht.shape),
+#                        zInterface=zInterface_u,
+#                        zInterfaceOut=zInterfaceOut, plot=True,
+#                        xPlot=x, zPlot=zInterface, tIndex=t)
        dummy = computeOSF(ut, uMask, dy=dy*np.ones(uht.shape),
                         zInterface=zInterface_u,
-                        zInterfaceOut=zInterfaceOut, plot=True,
-                        xPlot=x, zPlot=zInterface, tIndex=t)
+                        zInterfaceOut=zInterfaceOut)
+
        # skip the extra points we added at the top, since those aren't part of
        # standard ISOMIP+ output
        osfOut[t,:,:] = dummy[nzExtra:, :]
@@ -447,7 +469,7 @@ def melt4gamma(name,area,ice_base,depth,args):
 
    print('WARNING: have you checked if exp. has reached steady state?')
    # read melt over last 6 months
-   melt = Dataset(args.month_file).variables['melt'][-6::,:,:]
+   melt = MFDataset(args.month_file).variables['melt'][-6::,:,:]
    # total area under ice shelf (exclude grounded ice)
    # mask area where ice base <= 300
    area = np.ma.masked_where(ice_base<=300.,area)
@@ -489,7 +511,8 @@ def mask_grounded_ice(data,depth,base):
       NZ,NY,NX = data.shape
       #base = np.resize(base,(NZ,NY,NX))
       depth = np.resize(depth,(NZ,NY,NX))
-      data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
+      #print('base.shape,depth.shape,data.shape',base.shape,depth.shape,data.shape)
+      data = np.ma.masked_where(base+2.0>=depth, data) # need +1 here
 
    return data
 
@@ -606,6 +629,15 @@ def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    #meanMeltRate[:] = np.zeros(len(time))
    #totalMeltFlux[:] = np.zeros(len(time))
    # close the file.
+   ncfile.author = args.author
+   ncfile.date = datetime.now().isoformat()
+   ncfile.created_using = os.path.basename(__file__) + ' -type ' + args.type + ' -author ' + \
+    args.author + ' -n ' + args.n + ' -icfile ' + args.icfile + ' -geometry ' + args.geometry +\
+    ' -isfile ' + args.isfile + ' -month_file ' + args.month_file + ' -month_z_file ' + args.month_z_file +\
+    ' -prog_file ' + args.prog_file + ' -nx ' + str(args.nx) + ' -ny ' + str(args.ny) + ' -nz ' + str(args.nz)
+
+   ncfile.url = os.path.basename(__file__) + ' can be found at https://github.com/gustavo-marques/ISOMIP'
+
    ncfile.close()
    print ('*** SUCCESS creating '+exp_name+'.nc!')
    return

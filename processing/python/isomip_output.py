@@ -634,9 +634,9 @@ def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    ncfile.created_using = os.path.basename(__file__) + ' -type ' + args.type + ' -author ' + \
     args.author + ' -n ' + args.n + ' -icfile ' + args.icfile + ' -geometry ' + args.geometry +\
     ' -isfile ' + args.isfile + ' -month_file ' + args.month_file + ' -month_z_file ' + args.month_z_file +\
-    ' -prog_file ' + args.prog_file + ' -nx ' + args.nx + ' -ny ' + args.ny + ' -nz ' + args.nz
+    ' -prog_file ' + args.prog_file + ' -nx ' + str(args.nx) + ' -ny ' + str(args.ny) + ' -nz ' + str(args.nz)
+
    ncfile.url = os.path.basename(__file__) + ' can be found at https://github.com/gustavo-marques/ISOMIP'
-   ncfile.git_hash = str(subprocess.check_output(["git", "describe","--always"]).strip())
 
    ncfile.close()
    print ('*** SUCCESS creating '+exp_name+'.nc!')

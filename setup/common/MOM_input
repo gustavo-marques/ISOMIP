@@ -40,6 +40,27 @@ Z_OUTPUT_GRID_FILE = "ISOMIP_zgrid.nc" ! default = ""
                                 ! The file that specifies the vertical grid for
                                 ! depth-space diagnostics, or blank to disable
                                 ! depth-space output.
+NUM_DIAG_COORDS = 1             ! default = 1
+                                ! The number of diagnostic vertical coordinates to use. For each coordinate, an
+                                ! entry in DIAG_COORDS must be provided.
+DIAG_COORDS = "z Z ZSTAR"       !
+                                ! A list of string tuples associating diag_table modules to a coordinate
+                                ! definition used for diagnostics. Each string is of the form
+                                ! "MODULE_SUFFIX,PARAMETER_SUFFIX,COORDINATE_NAME".
+DIAG_COORD_DEF_Z = "FILE:ISOMIP_zgrid.nc,interfaces=zw"      ! default = "WOA09"
+                                ! Determines how to specify the coordinate resolution. Valid options are:
+                                !  PARAM       - use the vector-parameter DIAG_COORD_RES_Z
+                                !  UNIFORM[:N] - uniformly distributed
+                                !  FILE:string - read from a file. The string specifies
+                                !                the filename and variable name, separated
+                                !                by a comma or space, e.g. FILE:lev.nc,dz
+                                !                or FILE:lev.nc,interfaces=zw
+                                !  WOA09[:N]   - the WOA09 vertical grid (approximately)
+                                !  FNC1:string - FNC1:dz_min,H_total,power,precision
+                                !  HYBRID:string - read from a file. The string specifies
+                                !                the filename and two variable names, separated
+                                !                by a comma or space, for sigma-2 and dz. e.g.
+                                !                HYBRID:vgrid.nc,sigma2,dz
 ! Parameters providing information about the vertical grid.
 RHO_0 = 1028.0                  !   [kg m-3] default = 1035.0
                                 ! The mean ocean density used with BOUSSINESQ true to
@@ -607,8 +628,6 @@ GUST_CONST = 0.0               !   [Pa] default = 0.02
                                 ! The background gustiness in the winds.
 ICE_SHELF = True                !   [Boolean] default = False
                                 ! If true, enables the ice shelf model.
-ZSTAR_RIGID_SURFACE_THRESHOLD = 10 !
-
 ! === module MOM_grid ===
 ! Parameters providing information about the lateral grid.
 

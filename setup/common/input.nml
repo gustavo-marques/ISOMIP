@@ -6,7 +6,7 @@
          parameter_filename = 'MOM_input',
                               'MOM_override' /
  &diag_manager_nml
-         conserve_water = .FALSE.
+         flush_nc_files=.true.
  /
 
  &ocean_solo_nml

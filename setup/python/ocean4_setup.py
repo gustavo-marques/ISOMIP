@@ -12,7 +12,7 @@ ncpath='../ncfiles/Ocean4_input_geom_v1.01.nc'
 # read 3D file
 file3D = netCDF4.Dataset('../ncfiles/Ocean4_shelf_mass_3D.nc','r+')
 # read IC files
-file3Dic = netCDF4.Dataset('../ncfiles/Ocean4_3D_ic.nc','r+')
+file3Dic = netCDF4.Dataset('../ncfiles/Ocean4_3D.nc','r+')
 
 x = netCDF4.Dataset(ncpath).variables['x'][:]
 y = netCDF4.Dataset(ncpath).variables['y'][:]
@@ -20,7 +20,7 @@ time = netCDF4.Dataset(ncpath).variables['t'][:]
 [X,Y]=np.meshgrid(x/1.0e3,y/1.0e3)
 
 for t in range(len(time)):
-    print 'Time is:', time[t]/(3600*24*365)
+    print('Time is:', time[t]/(3600*24*365))
     upperSurface = netCDF4.Dataset(ncpath).variables['upperSurface'][t,:]
     lowerSurface = netCDF4.Dataset(ncpath).variables['lowerSurface'][t,:]
 
@@ -41,8 +41,6 @@ for t in range(len(time)):
     # calve
     thick_smoth[thick_smoth<100] = 0.0
 
-    print thick_smoth.shape
-
     # interpolate to coarse grid
     xnew=x[::2];ynew=y[::2]
     f_thick = interpolate.interp2d(x, y, thick_smoth, kind='cubic')
@@ -55,7 +53,6 @@ for t in range(len(time)):
 #    x2=xnew/1.0e3;y2=ynew/1.0e3
     jm,im = thick_new.shape
 
-
     # compute mass (kg/m^2)
     rho_ice = 918.
     mass = thick_new * rho_ice
@@ -65,7 +62,7 @@ for t in range(len(time)):
 
     #save into netcdf files
     if t == 0:
-       print 'Saving initial conditions...'
+       print('Saving initial conditions...')
        file3Dic.variables['area'][:] = area[:,:]
        file3Dic.variables['thick'][:] = thick_new[:,:]
 
@@ -74,7 +71,7 @@ for t in range(len(time)):
     file3D.variables['mass'][t,:,:] = mass[:,:]
     file3D.variables['TIME'][t] = time[t]/(3600.0*24.0) # in days
 
-print 'Done!'
+print('Done!')
 
 file3D.close()
 file3Dic.close()

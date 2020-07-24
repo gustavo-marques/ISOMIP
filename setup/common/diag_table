@@ -75,6 +75,10 @@
 "ocean_model","uhbt","uhbt","prog%4yr","all",.false.,"none",2
 "ocean_model","thermal_driving","thermal_driving","prog%4yr","all",.false.,"none",2
 "ocean_model","haline_driving","haline_driving","prog%4yr","all",.false.,"none",2
+"ocean_model","vprec","vprec","prog%4yr","all",.false.,"none",2
+"ocean_model","lprec","lprec","prog%4yr","all",.false.,"none",2
+"ocean_model","salt_flux","salt_flux","prog%4yr","all",.false.,"none",2
+"ocean_model","sensible","sensible","prog%4yr","all",.false.,"none",2
 
 #"bt_high_freq_%4yr_%3dy",  0.25,"days",1,"days","Time",10,"days"
 

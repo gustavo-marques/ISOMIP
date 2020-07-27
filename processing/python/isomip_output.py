@@ -70,8 +70,8 @@ def parseCommandLine():
   parser.add_argument('-nz', type=float, default=144,
       help='''The number of grid points in the vertical direction (for the OUTPUT ncfile). Default is 144.''')
 
-#  parser.add_argument('--test', action="store_true",
-#      help='''Write 4D versions of elevation and overtuningStreamfunction so we can use gplot. ''')
+  parser.add_argument('-debug', action="store_true",
+      help='''Execute print statements and save additional variables. ''')
 
   parser.add_argument('--mean4gamma', help='''Compute (and save in a text file) melting over the area where ice base > 300 m and over final six months.''', action="store_true")
 
@@ -105,7 +105,7 @@ def driver(args):
      #ice_base = -MFDataset(args.month_file).variables['e'][:,1,:]
      ice_base = -MFDataset(args.month_file).variables['e'][:,0,:,:]
      shelf_area = np.ones(ice_base.shape) * ocean_area[0,0]
-     ice_base[ice_base<=10.0] = 0.0
+     ice_base[ice_base<=1.0] = 0.0
      shelf_area[ice_base == 0.0] = 0.0
      ocean_area = np.repeat(ocean_area[np.newaxis,:,:], tm, axis=0)
    else: # ocean0/2
@@ -116,9 +116,11 @@ def driver(args):
      ice_base[ice_base<1e-5] = 0.0
 
    #mask grounded ice and open ocean
-   #print ('shelf_area.shape, depth.shape, ice_base.shape',shelf_area.shape, depth.shape, ice_base.shape)
+   if args.debug:
+     print ('shelf_area.shape, depth.shape, ice_base.shape',shelf_area.shape, depth.shape, ice_base.shape)
    shelf_area = mask_grounded_ice(shelf_area,depth,ice_base)
    shelf_area = mask_ocean(shelf_area,shelf_area)
+
 
    # x,y, at tracer points
    x=Dataset(args.geometry).variables['geolon'][:]*1.0e3 # in m
@@ -130,6 +132,10 @@ def driver(args):
 
    # create ncfile and zero fields. Each function below will corresponding values
    create_ncfile(name,time,args)
+
+   if args.debug:
+     saveXY(shelf_area,'shelfArea')
+     saveXY(ice_base,'iceBase')
 
    # load additional variables
    melt = MFDataset(args.month_file).variables['melt'][:]
@@ -198,12 +204,20 @@ def driver(args):
 
    # uBoundaryLayer
    u_ml = MFDataset(args.month_file).variables['u_ml'][:]
+   if u_ml.shape[-1]>im:
+     # t-points
+     u_ml = 0.5 * (u_ml[:,:,0:-1]+u_ml[:,:,1::])
+
    u_ml = mask_grounded_ice(u_ml,depth,ice_base)
    u_ml = mask_ocean(u_ml,shelf_area)
    saveXY(u_ml,'uBoundaryLayer')
 
    # vBoundaryLayer
    v_ml = MFDataset(args.month_file).variables['v_ml'][:]
+   if v_ml.shape[-2]>jm:
+     # t-points
+     v_ml = 0.5 * (v_ml[:,0:-1,:]+v_ml[:,1::])
+
    v_ml = mask_grounded_ice(v_ml,depth,ice_base)
    v_ml = mask_ocean(v_ml,shelf_area)
    saveXY(v_ml,'vBoundaryLayer')
@@ -212,7 +226,7 @@ def driver(args):
    # iceDraft
    # will have to works this out when we run these cases
    iceDraft = ice_base.copy()
-   iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
+   #iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
    #iceDraft[shelf_area == 0.] = 0.0
    iceDraft.fill_value = 0.0; iceDraft = iceDraft.filled()
    saveXY(-iceDraft,'iceDraft')
@@ -258,7 +272,11 @@ def driver(args):
 
    # barotropic streamfunction
    uhbt = MFDataset(args.month_file).variables['uhbt'][:]
+   if uhbt.shape[-1]>im:
+     uhbt = 0.5 * (uhbt[:,:,0:-1]+uhbt[:,:,1::])
    vhbt = MFDataset(args.month_file).variables['vhbt'][:]
+   if vhbt.shape[-2]>jm:
+     vhbt = 0.5 * (vhbt[:,0:-1,:]+vhbt[:,1::,:])
    # mask grouded region
    uhbt = mask_grounded_ice(uhbt,depth,ice_base)
    vhbt = mask_grounded_ice(vhbt,depth,ice_base)
@@ -268,6 +286,10 @@ def driver(args):
 
    # overturningStreamfunction
    uh = MFDataset(args.month_file).variables['uh'][:]
+   if uh.shape[-1]>im:
+     # t-points
+     uh = 0.5 * (uh[:,:,:,0:-1] + uh[:,:,:,1::])
+
    e = MFDataset(args.month_file).variables['e'][:]
    osf = get_OSF(uh,e,h,x[0,:],y[:,0])
    osf = np.ma.masked_where(osf==0.0, osf)
@@ -512,7 +534,7 @@ def mask_grounded_ice(data,depth,base):
       #base = np.resize(base,(NZ,NY,NX))
       depth = np.resize(depth,(NZ,NY,NX))
       #print('base.shape,depth.shape,data.shape',base.shape,depth.shape,data.shape)
-      data = np.ma.masked_where(base+2.0>=depth, data) # need +1 here
+      data = np.ma.masked_where(base+1.0>=depth, data) # need +1 here
 
    return data
 
@@ -584,6 +606,12 @@ def create_ncfile(exp_name, ocean_time, args): # may add exp_type
    vBoundaryLayer.units = 'm/s'; vBoundaryLayer.description = 'y-velocity in the boundary layer used to compute u*'
    barotropicStreamfunction = ncfile.createVariable('barotropicStreamfunction',np.dtype('float32').char,('nTime','ny','nx'))
    barotropicStreamfunction.units = 'm^3/s'; barotropicStreamfunction.description = 'barotropic streamfunction'
+
+   if args.debug:
+     shelfArea = ncfile.createVariable('shelfArea',np.dtype('float32').char,('nTime','ny','nx'))
+     shelfArea.units = 'm^2'; meltRate.description = 'Area of floating ice shelf'
+     iceBase = ncfile.createVariable('iceBase',np.dtype('float32').char,('nTime','ny','nx'))
+     iceBase.units = 'm'; meltRate.description = 'Ice base'
 
    # As of now we need to compute overturningStreamfunction in the native grid
    overturningStreamfunction = ncfile.createVariable('overturningStreamfunction',np.dtype('float32').char,('nTime','nz','nx'))

@@ -226,8 +226,8 @@ def driver(args):
    # iceDraft
    # will have to works this out when we run these cases
    iceDraft = ice_base.copy()
-   #iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
-   #iceDraft[shelf_area == 0.] = 0.0
+   iceDraft = mask_grounded_ice(iceDraft,depth,ice_base)
+   iceDraft[shelf_area == 0.] = 0.0
    iceDraft.fill_value = 0.0; iceDraft = iceDraft.filled()
    saveXY(-iceDraft,'iceDraft')
 

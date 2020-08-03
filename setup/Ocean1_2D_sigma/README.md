@@ -1,4 +1,4 @@
-Z* coordiantes
+sigma coordiantes
 
 
 A Quiet experiment with ice shelf and no meltiing

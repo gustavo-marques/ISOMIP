@@ -1,4 +1,4 @@
-Z* coordiantes
+rho coordiantes
 
 
 A Quiet experiment with ice shelf and no meltiing

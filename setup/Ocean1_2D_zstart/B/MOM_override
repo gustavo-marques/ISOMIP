@@ -1,6 +1,10 @@
 ! Blank file in which we can put "overrides" for parameters
 !#override DEBUG_IS = True
 
+! BBL
+! the following helps keeping the simulation quieter
+!#override KV_BBL_MIN = 10.0
+
 !turn off melting
 !#override ICE_SHELF_FLUX_FACTOR = 0.0
 
@@ -9,6 +13,8 @@
 #override TRIM_IC_FOR_P_SURF = False
 
 ! 2D
+ISOMIP_2D = True
+#override BUOY_CONFIG = "zero"
 #override NJGLOBAL = 4
 #override F_0 = 0.0
 #override REENTRANT_Y = True

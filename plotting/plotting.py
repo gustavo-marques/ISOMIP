@@ -10,21 +10,31 @@ import subprocess
 import numpy as np
 
 # Define a function to plot a section
-def plot_section(file_handle, record, xq, i=0, variable='salt',eta='e',clim=(33.8,34.55), plot_grid=True, rep='pcm', xlim=(320,800), ylim=(-720,0), cmap=plt.cm.jet):
+def plot_section(file_handle, record, xq, j=0, variable='salt',eta='e',clim=(33.8,34.55), plot_grid=True, rep='pcm', xlim=(320,800), ylim=(-720,0), cmap=plt.cm.jet, ax=None, show_stats=True):
     """Plots a section of by reading vertical grid and scalar variable and super-sampling
     both in order to plot vertical and horizontal reconstructions.
-    
+
     Optional arguments have defaults for plotting salinity and overlaying the grid.
     """
-    e = file_handle.variables[eta][record,:,:,i] # Vertical grid positions
-    s = file_handle.variables[variable][record,:,:,i] # Scalar field to color
+    e = file_handle.variables[eta][record,:,j,:] # Vertical grid positions
+    s = file_handle.variables[variable][record,:,j,:] # Scalar field to color
+    if variable == 'u': # we need u at h pts
+      s = 0.5 * (s[:,0:-1]+s[:,1::])
+
     x,z,q = m6toolbox.section2quadmesh(xq, e, s, representation=rep) # This yields three areas at twice the model resolution
-    plt.pcolormesh(x, z, q, cmap=cmap);
-    plt.colorbar()
-    plt.clim(clim)
-    if plot_grid: plt.plot(x, z.T, 'k', hold=True);
-    plt.ylim(ylim)
-    plt.xlim(xlim)
+
+    if ax is None:
+      fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(8,6))
+
+    cs = ax.pcolormesh(x, z, q, cmap=cmap, vmin=clim[0], vmax=clim[1]);
+    cb =plt.colorbar(cs,ax=ax)
+    if plot_grid: ax.plot(x, z.T, 'k');
+    ax.set_ylim(ylim)
+    ax.set_xlim(xlim)
+    if show_stats > 0:
+      sMin = s.min(); sMax = s.max()
+      ax.annotate('max=%.5g\nmin=%.5g'%(sMax,sMin), xy=(0.0,1.01),
+      xycoords='axes fraction', verticalalignment='bottom', fontsize=10)
 
 def plot_diags(path,n1,n2,n3,n4):
     """
@@ -44,7 +54,7 @@ def plot_stats(file_handle,variable='v',labels=['layer','rho','sigma','z']):
         time = file_handle[i].variables['Time'][:]
         smin=np.zeros(len(time)); smax=np.zeros(len(time))
         total=np.zeros(len(time))
-        s = file_handle[i].variables[variable][:]      
+        s = file_handle[i].variables[variable][:]
         for t in range(len(time)):
             smin[t]=s[t,:].min(); smax[t]=s[t,:].max()
             if smax[t]>=np.abs(smin[t]):
@@ -56,8 +66,8 @@ def plot_stats(file_handle,variable='v',labels=['layer','rho','sigma','z']):
 
         plt.plot(time,total,lw=2.0, label=labels[i])
         plt.legend(loc=0, shadow=True)
-        plt.xlabel('Time') 
-        plt.ylabel(units) 
+        plt.xlabel('Time')
+        plt.ylabel(units)
 
 def get_rho(S,T,rho0=1027.51,Sref=34.2,Tref=-1.0,alpha = 3.733e-5, beta = 7.843e-4):
     """ Compute linear EoS """

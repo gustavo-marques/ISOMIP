@@ -1,14 +1,13 @@
 ! Blank file in which we can put "overrides" for parameters
 !#override DEBUG_IS = True
 
-! 2D configuration
-ISOMIP_2D = True
-#override SURFACE_PRESSURE_FILE = "Ocean1_2D.nc"
-#override BUOY_CONFIG = "zero"
-#override ICE_THICKNESS_FILE = "Ocean1_2D.nc"
+! remove topography
+#override TOPO_CONFIG = "flat"
+#override MAXIMUM_DEPTH = 720.
 
-!turn off melting
-#override ICE_SHELF_FLUX_FACTOR = 0.0
+! remove ice shelf
+#override ICE_SHELF = False
+#override TRIM_IC_FOR_P_SURF = False
 
 ! 2D
 #override NJGLOBAL = 4
@@ -25,7 +24,7 @@ ISOMIP_2D = True
 ! ALE
 #override IGNORE_FLUXES_OVER_LAND = True
 #override USE_REGRIDDING = True
-#override REGRIDDING_COORDINATE_MODE = "ZSTAR"
+#override REGRIDDING_COORDINATE_MODE = "RHO"
 #override INTERPOLATION_SCHEME = "PPM_H4"
 #override REMAPPING_SCHEME = "PPM_H4"
 #override TRIMMING_USES_REMAPPING = True
@@ -60,8 +59,8 @@ ISOMIP_2D = True
 !#override HMIX_SFC_PROP = 20.
 
 !IS from Ocean1
-#override SURFACE_PRESSURE_FILE = "Ocean1_2D.nc"
-#override ICE_THICKNESS_FILE = "Ocean1_2D.nc"
+!#override SURFACE_PRESSURE_FILE = "Ocean1_2D.nc"
+!#override ICE_THICKNESS_FILE = "Ocean1_2D.nc"
 
 ! ML
 #override MIXEDLAYER_RESTRAT = False

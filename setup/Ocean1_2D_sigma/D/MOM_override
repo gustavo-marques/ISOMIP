@@ -1,11 +1,8 @@
 ! Blank file in which we can put "overrides" for parameters
 !#override DEBUG_IS = True
 
-! 2D configuration
-ISOMIP_2D = True
-#override SURFACE_PRESSURE_FILE = "Ocean1_2D.nc"
-#override BUOY_CONFIG = "zero"
-#override ICE_THICKNESS_FILE = "Ocean1_2D.nc"
+! turn off EpBL
+#override ENERGETICS_SFC_PBL = False
 
 !turn off melting
 #override ICE_SHELF_FLUX_FACTOR = 0.0
@@ -25,7 +22,7 @@ ISOMIP_2D = True
 ! ALE
 #override IGNORE_FLUXES_OVER_LAND = True
 #override USE_REGRIDDING = True
-#override REGRIDDING_COORDINATE_MODE = "ZSTAR"
+#override REGRIDDING_COORDINATE_MODE = "SIGMA"
 #override INTERPOLATION_SCHEME = "PPM_H4"
 #override REMAPPING_SCHEME = "PPM_H4"
 #override TRIMMING_USES_REMAPPING = True
@@ -65,7 +62,6 @@ ISOMIP_2D = True
 
 ! ML
 #override MIXEDLAYER_RESTRAT = False
-#override ENERGETICS_SFC_PBL = True
 #override MLE_USE_PBL_MLD = True
 #override MINIMUM_FORCING_DEPTH = 0.5
 #override HMIX_FIXED = 20.0

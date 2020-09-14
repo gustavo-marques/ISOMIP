@@ -1,6 +1,10 @@
 ! Blank file in which we can put "overrides" for parameters
 !#override DEBUG_IS = True
 
+! BBL
+! the following helps keeping the simulation quieter
+!#override KV_BBL_MIN = 10.0
+
 !turn off melting
 !#override ICE_SHELF_FLUX_FACTOR = 0.0
 
@@ -94,4 +98,4 @@ ISOMIP_2D = True
 
 ! Simulation time
 !#override DAYMAX = 7300.0
-override DAYMAX = 60
+#override DAYMAX = 5

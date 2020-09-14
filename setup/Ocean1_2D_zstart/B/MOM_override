@@ -9,6 +9,8 @@
 #override TRIM_IC_FOR_P_SURF = False
 
 ! 2D
+ISOMIP_2D = True
+#override BUOY_CONFIG = "zero"
 #override NJGLOBAL = 4
 #override F_0 = 0.0
 #override REENTRANT_Y = True
@@ -92,4 +94,4 @@
 
 ! Simulation time
 !#override DAYMAX = 7300.0
-#override DAYMAX = 5
+override DAYMAX = 60

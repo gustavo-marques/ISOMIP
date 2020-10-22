@@ -66,8 +66,8 @@
 
 \begin{itemize}
 \item Model and version: Modular Ocean Model v. 6 (MOM6).
-\item Repository: https://github.com/gustavo-marques/MOM6/releases/tag/ISOMIP.v2.0 
-\item Model configuration and input files: 
+\item Repository: https://github.com/gustavo-marques/MOM6/releases/tag/ISOMIP.v2.1
+\item Model configuration and input files:
 \begin{itemize}
    \item https://github.com/gustavo-marques/ISOMIP/tree/master/setup/Ocean0/COM
    \item https://github.com/gustavo-marques/ISOMIP/tree/master/setup/Ocean1/COM
@@ -86,10 +86,10 @@
 
 \item Melt parameterization: $T_w$, $S_w$ and $u_w$ were averaged within 20 m of the ice draft; $u_w$ was averaged the to the tracer grid using four horizontal neighbors. Melting was set to zero in regions where the ice depth was less than 90 m and when the total water column thickness was less than 10 m.
 
-\item Modifications to Topography: Interpolated to 2-km grid using a spline method\footnote{http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp2d.html\#scipy.interpolate.interp2d} then smoothed the ice thickness using a Gaussian filter\footnote{http://docs.scipy.org/doc/scipy-0.16.1/reference/generated/scipy.ndimage.filters.gaussian\_filter.html} with half-width of 2 km for the y and x direction. An offline calving criterion was used where ice thinner than 100 m was removed. 
+\item Modifications to Topography: Interpolated to 2-km grid using a spline method\footnote{http://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.interp2d.html\#scipy.interpolate.interp2d} then smoothed the ice thickness using a Gaussian filter\footnote{http://docs.scipy.org/doc/scipy-0.16.1/reference/generated/scipy.ndimage.filters.gaussian\_filter.html} with half-width of 2 km for the y and x direction. An offline calving criterion was used where ice thinner than 100 m was removed.
 
 \item Maintaining sea level: mass fluxes were used and sea level was keep approximately constant by removing/adding mass via a balancing flux applied in the restoring region (via virtual precipitation). Additional salt/heat fluxes were also applied so that the resultant surface buoyancy forcing is $\sim$ 0.
-  
+
 \item Deviations from COM: the model deviated from the COM vertical mixing and convection parameterization. Instead of prescribing the COM vertical viscosity/diffusivity when the local stratification was unstable, we applied the parameterization developed by \cite{Jackson2008} using a critical Richardson number of $Ri_c$ = 0.25. Within the top boundary layer, vertical mixing is also controlled by the ocean boundary layer scheme described in \cite{Reichl2018}.
 
 \item Parameter values:
